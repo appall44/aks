@@ -1,98 +1,324 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Akeray Property Management System - Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This is the backend API for the Akeray Property Management System (APMS), built with NestJS (a progressive Node.js framework). It provides a comprehensive RESTful API for managing properties, tenants, landlords, payments, and all aspects of property management operations.
 
-## Description
+## 🏗️ Backend Architecture
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The backend follows a modular architecture pattern with clear separation of concerns:
 
-## Project setup
+- **Controllers**: Handle HTTP requests and responses
+- **Services**: Contain business logic
+- **Entities**: Define database models using TypeORM
+- **Modules**: Organize related functionality
+- **Middleware**: Handle cross-cutting concerns like authentication
 
-```bash
-$ npm install
+## 📁 Backend Folder Structure
+
+```
+Backend/
+├── src/                          # Source code directory
+│   ├── app.controller.ts         # Root controller
+│   ├── app.module.ts            # Root module
+│   ├── app.service.ts           # Root service
+│   ├── main.ts                  # Application entry point
+│   │
+│   ├── @types/                  # TypeScript type definitions
+│   │   └── express/             # Express.js type extensions
+│   │
+│   ├── admin/                   # Admin dashboard functionality
+│   │   ├── admin.controller.ts  # Admin endpoints
+│   │   ├── admin.module.ts      # Admin module
+│   │   ├── admin.services.ts    # Admin business logic
+│   │   ├── admin-dashboard/     # Admin dashboard data
+│   │   └── entities/            # Admin-related entities
+│   │
+│   ├── amenity/                 # Property amenities management
+│   │   └── amenity.entity.ts    # Amenity database model
+│   │
+│   ├── auth/                    # Authentication & authorization
+│   │   ├── auth.controller.ts   # Auth endpoints (login, register)
+│   │   ├── auth.service.ts      # Authentication logic
+│   │   ├── auth.module.ts       # Auth module configuration
+│   │   ├── strategies/          # JWT, Local strategies
+│   │   ├── guards/              # Route protection guards
+│   │   ├── dto/                 # Data transfer objects
+│   │   ├── email/               # Email service integration
+│   │   ├── otp/                 # One-time password functionality
+│   │   └── interfaces/          # Auth-related interfaces
+│   │
+│   ├── config/                  # Configuration management
+│   │   ├── config.module.ts     # Configuration module
+│   │   ├── database.config.ts   # Database connection settings
+│   │   ├── jwt.config.ts        # JWT token configuration
+│   │   ├── sms.config.ts        # SMS service configuration
+│   │   └── swaggers.ts          # API documentation setup
+│   │
+│   ├── dashboard/               # Dashboard analytics
+│   │   ├── dashboard.controller.ts # Dashboard endpoints
+│   │   ├── dashboard.service.ts    # Dashboard data aggregation
+│   │   └── dashboard.module.ts     # Dashboard module
+│   │
+│   ├── database/                # Database configuration
+│   │   ├── database.module.ts   # Database module
+│   │   ├── database.providers.ts # Database connection providers
+│   │   ├── migrations/          # Database migrations
+│   │   └── seed.ts             # Database seeding scripts
+│   │
+│   ├── landlord/               # Landlord management
+│   │   ├── landlord.entity.ts   # Landlord database model
+│   │   ├── landlord.module.ts   # Landlord module
+│   │   ├── landlord.service.ts  # Landlord business logic
+│   │   └── LandlordController.ts # Landlord endpoints
+│   │
+│   ├── leases/                 # Lease management
+│   │   ├── lease.controller.ts  # Lease endpoints
+│   │   ├── lease.entity.ts      # Lease database model
+│   │   ├── lease.service.ts     # Lease business logic
+│   │   └── lease.module.ts      # Lease module
+│   │
+│   ├── notifications/          # Notification system
+│   │   ├── notifications.module.ts    # Notification module
+│   │   ├── notifications.service.ts   # Notification service
+│   │   └── events/           # Event handlers
+│   │
+│   ├── owner/                # Property owner management
+│   │   ├── owner.controller.ts  # Owner endpoints
+│   │   ├── owner.service.ts     # Owner business logic
+│   │   ├── owner.module.ts      # Owner module
+│   │   ├── entities/            # Owner-related entities
+│   │   ├── owner-dashboard/     # Owner dashboard data
+│   │   └── payments/            # Owner payment management
+│   │
+│   ├── payments/             # Payment processing
+│   │   ├── payment.entity.ts    # Payment database model
+│   │   ├── payments.controller.ts # Payment endpoints
+│   │   ├── payments.service.ts    # Payment processing logic
+│   │   └── payments.module.ts     # Payment module
+│   │
+│   ├── properties/           # Property management
+│   │   ├── properties.controller.ts  # Property endpoints
+│   │   ├── properties.service.ts     # Property business logic
+│   │   ├── properties.module.ts      # Property module
+│   │   ├── dto/              # Property data transfer objects
+│   │   └── entities/         # Property database models
+│   │
+│   ├── reports/              # Report generation
+│   │   ├── reports.controller.ts  # Report endpoints
+│   │   └── reports.service.ts     # Report generation logic
+│   │
+│   ├── tenant/               # Tenant management
+│   │   ├── tenant.controller.ts   # Tenant endpoints
+│   │   ├── tenant.service.ts      # Tenant business logic
+│   │   ├── tenant.module.ts       # Tenant module
+│   │   ├── entities/              # Tenant database models
+│   │   ├── tenant-dashboard/      # Tenant dashboard data
+│   │   └── maintenance/           # Tenant maintenance requests
+│   │
+│   ├── units/                # Unit management
+│   │   ├── units.controller.ts    # Unit endpoints
+│   │   ├── units.service.ts       # Unit business logic
+│   │   ├── units.module.ts        # Unit module
+│   │   ├── dto/                   # Unit data transfer objects
+│   │   └── entities/              # Unit database models
+│   │
+│   └── utils/                # Utility functions
+│       ├── date.util.ts         # Date manipulation utilities
+│       ├── env.ts               # Environment variable helpers
+│       └── token.util.ts        # JWT token utilities
+│
+├── uploads/                  # File upload storage
+│   ├── properties/           # Property images & documents
+│   ├── units/                # Unit-specific documents
+│   └── ownership-proofs/     # Property ownership verification
+│
+├── test/                     # Test files
+├── .env                      # Environment variables
+├── .env.example             # Environment variables template
+├── docker-compose.yml       # Docker services configuration
+├── Dockerfile              # Docker container configuration
+├── nest-cli.json           # NestJS CLI configuration
+├── package.json            # Dependencies & scripts
+└── tsconfig.json           # TypeScript configuration
 ```
 
-## Compile and run the project
+## 🚀 Key Features
+
+### Authentication & Authorization
+
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Multi-role support (Admin, Owner, Landlord, Tenant)
+- Password reset with OTP verification
+- Email notifications
+
+### Property Management
+
+- Property creation and management
+- Unit assignment and tracking
+- Amenity management
+- Property image uploads
+- Ownership verification
+
+### Financial Management
+
+- Payment processing and tracking
+- Invoice generation
+- Payment history
+- Financial reporting
+
+### Communication
+
+- SMS notifications via Geez SMS API
+- Email notifications
+- Automated alerts for lease expirations
+- Payment confirmation notifications
+
+### Reporting & Analytics
+
+- Dashboard analytics
+- Financial reports
+- Occupancy reports
+- Payment tracking reports
+
+## 🛠️ Technology Stack
+
+- **Framework**: NestJS (v9+)
+- **Language**: TypeScript
+- **Database**: PostgreSQL with TypeORM
+- **Authentication**: JWT (JSON Web Tokens)
+- **Validation**: class-validator & class-transformer
+- **Documentation**: Swagger/OpenAPI
+- **Testing**: Jest
+- **File Upload**: Multer
+- **SMS**: Geez SMS API
+- **Email**: Nodemailer
+
+## 📦 Dependencies
+
+Key dependencies include:
+
+- `@nestjs/core`: Core NestJS framework
+- `@nestjs/typeorm`: TypeORM integration
+- `@nestjs/jwt`: JWT authentication
+- `@nestjs/passport`: Authentication strategies
+- `typeorm`: ORM for database operations
+- `class-validator`: Input validation
+- `class-transformer`: Object transformation
+- `multer`: File upload handling
+- `nodemailer`: Email service
+- `geez-sms`: SMS service integration
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js v20+
+- PostgreSQL v14+
+- Geez SMS API credentials
+- Email service credentials
+
+### Installation
 
 ```bash
-# development
-$ npm run start
+# Install dependencies
+npm install
 
-# watch mode
-$ npm run start:dev
+# Copy environment variables
+cp .env.example .env
 
-# production mode
-$ npm run start:prod
+# Configure database
+# Update .env with your database credentials
+
+# Run database migrations
+npm run migration:run
+
+# Start development server
+npm run start:dev
 ```
 
-## Run tests
+### Environment Variables
 
 ```bash
-# unit tests
-$ npm run test
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=password
+DATABASE_NAME=akeray_pms
 
-# e2e tests
-$ npm run test:e2e
+# JWT
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRATION=7d
 
-# test coverage
-$ npm run test:cov
+# SMS
+GEEZ_SMS_API_KEY=your-sms-api-key
+
+# Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-email-password
+
+# File Upload
+UPLOAD_PATH=./uploads
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 🧪 Testing
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🐳 Docker Deployment
 
-## Resources
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
 
-Check out a few resources that may come in handy when working with NestJS:
+# Run in detached mode
+docker-compose up -d
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 📊 API Documentation
 
-## Support
+Once the server is running, visit:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- Swagger UI: http://localhost:3000/api
+- API Health Check: http://localhost:3000/health
 
-## Stay in touch
+## 🔧 Development Commands
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Generate new module
+nest generate module <module-name>
 
-## License
+# Generate new controller
+nest generate controller <controller-name>
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Generate new service
+nest generate service <service-name>
+
+# Run linting
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+```
+
+## 📞 Support
+
+For backend-related issues or questions:
+
+- Check the API documentation at `/api`
+- Review the logs in the console
+- Ensure all environment variables are properly configured
+- Verify database connectivity

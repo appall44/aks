@@ -1,43 +1,135 @@
-# Akeray Property Management System (APMS)
+# Akeray Property Management System - Frontend
 
 ## Overview
 
-The Akeray Property Management System (APMS) is a cloud-based platform designed to streamline property management operations. It provides a centralized solution for property owners, tenants, and admins to manage leasing, unit management, payments, maintenance requests, and notifications. This project is built with a modern web stack and prioritizes security, scalability, and efficiency.
+This is the frontend client for the Akeray Property Management System (APMS), built with Next.js 14, React 18, TypeScript, and Tailwind CSS. It provides a modern, responsive web interface for property management operations.
 
-### Core Features
+## 🏗️ Frontend Architecture
 
-- **User Management**: Admin CRUD operations for Owners, Tenants, and Admins with role-based access control (RBAC).
-- **Property Management**: Create, view, and manage property units (status, pricing).
-- **Lease Management**: Track lease terms, expiry dates, and generate agreements.
-- **Payment Processing**: Record payments and generate invoices.
-- **Notifications**: Automated SMS alerts via Geez SMS API for lease expirations and payment confirmations.
-- **Maintenance Requests**: Tenants submit requests; admins assign tasks.
+The frontend follows modern React patterns with:
 
-### Technology Stack
+- **App Router**: Next.js 14 App Router for file-based routing
+- **Server Components**: Leveraging React Server Components for performance
+- **Type Safety**: Full TypeScript integration
+- **Styling**: Tailwind CSS for utility-first styling
+- **State Management**: React hooks and context
+- **Responsive Design**: Mobile-first responsive design
 
-| Layer         | Technology                                          |
-| ------------- | --------------------------------------------------- |
-| Frontend      | ReactJS (v18)                                       |
-| Backend       | NestJS (v9+)                                        |
-| Database      | PostgreSQL (v14)                                    |
-| Deployment    | Docker, Linux VPS (Ubuntu 22.04 LTS), NGINX         |
-| Notifications | Geez SMS API                                        |
-| Security      | JWT Authentication, RBAC, HTTPS, Input Sanitization |
+## 📁 Frontend Folder Structure
 
-## Prerequisites
+```
+Frontend/
+├── app/                          # Next.js App Router
+│   ├── page.tsx                 # Landing page
+│   ├── layout.tsx               # Root layout
+│   ├── globals.css              # Global styles
+│   ├── dashboard/               # Dashboard pages
+│   ├── login/                   # Login page
+│   ├── signup/                  # Registration page
+│   └── landing/                 # Landing pages
+│
+├── components/                  # Reusable UI components
+│   ├── dashboard-layout.tsx     # Dashboard layout wrapper
+│   ├── theme-provider.tsx       # Theme context provider
+│   └── ui/                     # UI component library
+│
+├── hooks/                      # Custom React hooks
+├── lib/                        # Utility functions
+├── public/                     # Static assets
+├── styles/                     # Global styles
+├── package.json               # Dependencies & scripts
+└── tsconfig.json              # TypeScript configuration
+```
 
-- **Node.js**: v20+
-- **PostgreSQL**: v14
-- **Docker**: Latest stable version
-- **NGINX**: Optional for HTTPS termination
-- **Geez SMS API Key**: Obtain from Geez SMS provider
-- **Git**: For version control
+## 🚀 Key Features
 
-## Setup Instructions
+### Authentication & User Management
 
-### 1. Clone the Repository
+- Multi-role authentication (Admin, Owner, Landlord, Tenant)
+- Secure login/logout flows
+- Password reset functionality
+- OTP verification system
+- Role-based dashboard routing
+
+### Dashboard Interfaces
+
+- **Admin Dashboard**: Full system overview
+- **Owner Dashboard**: Property and financial management
+- **Landlord Dashboard**: Property and tenant management
+- **Tenant Dashboard**: Personal dashboard and maintenance requests
+
+### Property Management UI
+
+- Property listing and search
+- Unit management interface
+- Property image gallery
+- Document upload interface
+- Property status tracking
+
+### Financial Management
+
+- Payment tracking interface
+- Invoice generation and viewing
+- Payment history
+- Financial reports visualization
+
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI + custom components
+- **State Management**: React hooks
+- **HTTP Client**: Fetch API
+- **Form Handling**: React Hook Form
+- **Validation**: Zod schema validation
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js v20+
+- npm or pnpm package manager
+
+### Installation
 
 ```bash
-git clone https://github.com/[your-repo]/akeray-pms.git
-cd akeray-pms
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env.local
+
+# Start development server
+npm run dev
 ```
+
+### Environment Variables
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=Akeray PMS
+```
+
+## 🧪 Available Scripts
+
+```bash
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+
+# Lint code
+npm run lint
+```
+
+## 📊 API Documentation
+
+Once the server is running, visit:
+
+- Swagger UI: http://localhost:3000/api
+- API Health Check: http://localhost:3000/health
