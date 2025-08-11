@@ -1,0 +1,30 @@
+import { Property } from '../../properties/entities/property.entity';
+import { Payment } from '../../payments/payment.entity';
+import { MaintenanceRequest } from '../maintenance/maintenance.entity';
+import { Lease } from '../../leases/lease.entity';
+export declare class Tenant {
+    id: number;
+    email: string;
+    password: string;
+    firstname: string | null;
+    lastname: string | null;
+    idNumber: string | null;
+    phone: string | null;
+    occupation: string | null;
+    verified: boolean;
+    role: string | null;
+    otp: string | null;
+    otpExpiresAt: Date | null;
+    refreshToken: string | null;
+    unit: string | null;
+    leaseStart: Date | null;
+    leaseEnd: Date | null;
+    monthlyRent: number | null;
+    deposit: number | null;
+    status: string | null;
+    property?: Property;
+    propertyId?: number | null;
+    payments: Payment[];
+    maintenanceRequests: MaintenanceRequest[];
+    leases: Lease[];
+}
