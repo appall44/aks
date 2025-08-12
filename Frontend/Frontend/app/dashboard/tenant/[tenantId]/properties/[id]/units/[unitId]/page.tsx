@@ -1,26 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-	Building,
-	MapPin,
-	ArrowLeft,
-	Home,
-	DollarSign,
-	Calendar,
-	Bed,
-	Bath,
-	Star,
-	Phone,
-	Mail,
+  Building,
+  MapPin,
+  ArrowLeft,
+  Home,
+  DollarSign,
+  Calendar,
+  Bed,
+  Bath,
+  Star,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,62 +28,151 @@ import { Separator } from "@/components/ui/separator";
 import DashboardLayout from "@/components/dashboard-layout";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock unit data
-const getUnitData = (propertyId: string, unitId: string) => ({
-	property: {
-		id: parseInt(propertyId),
-		name: "Sunrise Apartments",
-		address: "Bole Road, Near Atlas Hotel, Addis Ababa",
-		rating: 4.8,
-		reviews: 24,
-	},
-	unit: {
-		id: unitId,
-		unitNumber: unitId,
-		floor: 2,
-		bedrooms: 2,
-		bathrooms: 1,
-		area: "65 sqm",
-		monthlyRent: 20000,
-		deposit: 40000,
-		status: "available",
-		description:
-			"Spacious two-bedroom apartment with city view. Ideal for small families or roommates. Features modern kitchen, large living room, and private balcony with stunning city views.",
-		amenities: [
-			"City View",
-			"Large Living Room",
-			"Storage Space",
-			"Modern Kitchen",
-			"Private Balcony",
-			"WiFi Ready",
-		],
-		images: [
-			"https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800",
-			"https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-			"https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800",
-			"https://images.pexels.com/photos/1438832/pexels-photo-1438832.jpeg?auto=compress&cs=tinysrgb&w=800",
-		],
-		availableFrom: "2025-02-01",
-		leaseTerm: "12 months",
-		furnished: false,
-		petsAllowed: false,
-		smokingAllowed: false,
-	},
-	owner: {
-		name: "Mulugeta Assefa",
-		phone: "+251911123456",
-		email: "mulugeta@akeray.et",
-		company: "Akeray Properties",
-		avatar:
-			"https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=100",
-	},
-});
+interface Property {
+  id: number;
+  name: string;
+  address: string;
+  rating?: number;
+  reviews?: number;
+}
+
+interface Unit {
+  id: number;
+  unitNumber: string;
+  floor?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: string;
+  monthlyRent?: number;
+  deposit?: number;
+  status?: string;
+  description?: string;
+  amenities?: string[];
+  images?: string[];
+  availableFrom?: string;
+  leaseTerm?: string;
+  furnished?: boolean;
+  petsAllowed?: boolean;
+  smokingAllowed?: boolean;
+}
+
+interface Owner {
+  name: string;
+  phone: string;
+  email: string;
+  company?: string;
+  avatar?: string;
+}
 
 export default function UnitDetailsPage() {
-	const [selectedImage, setSelectedImage] = useState(0);
-const params = useParams();
-	const data = getUnitData(params.id as string, params.unitId as string);
+  const { propertyId, unitId } = useParams();
+  const { toast } = useToast();
+
+  const [property, setProperty] = useState<Property | null>(null);
+  const [unit, setUnit] = useState<Unit | null>(null);
+  const [owner, setOwner] = useState<Owner | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState(0);
+
+  const backendUrl = "http://localhost:5000";
+
+  useEffect(() => {
+    if (!propertyId || !unitId) return;
+
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem("accessToken") || "";
+
+      try {
+        // Fetch each resource individually so one failure doesn't block the rest
+        const propertyReq = axios
+          .get<Property>(`${backendUrl}/properties/${propertyId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            setProperty(res.data);
+            console.log("Property loaded:", res.data);
+          })
+          .catch((err) => {
+            console.error("Property fetch failed:", err);
+            setError((prev) => prev || "Failed to load property data.");
+          });
+
+        const unitReq = axios
+          .get<Unit>(`${backendUrl}/units/${unitId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            setUnit(res.data);
+            console.log("Unit loaded:", res.data);
+          })
+          .catch((err) => {
+            console.error("Unit fetch failed:", err);
+            setError((prev) => prev || "Failed to load unit data.");
+          });
+
+        const ownerReq = axios
+          .get<Owner>(`${backendUrl}/units/${unitId}/owner`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            setOwner(res.data);
+            console.log("Owner loaded:", res.data);
+          })
+          .catch((err) => {
+            console.error("Owner fetch failed:", err);
+            setError((prev) => prev || "Failed to load owner data.");
+          });
+
+        await Promise.all([propertyReq, unitReq, ownerReq]);
+      } catch (err: any) {
+        console.error("Unexpected fetch error:", err);
+        setError(err.message || "Unexpected error while loading data.");
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [propertyId, unitId, toast]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <p>Loading...</p>
+      </DashboardLayout>
+    );
+  }
+
+  if (error && !property && !unit) {
+    return (
+      <DashboardLayout>
+        <p className="text-red-600">{error}</p>
+      </DashboardLayout>
+    );
+  }
+
+  if (!property || !unit) {
+    return (
+      <DashboardLayout>
+        <p>Unit or Property not found.</p>
+      </DashboardLayout>
+    );
+  }
+
+  const images = unit.images ?? [];
+  const amenities = unit.amenities ?? [];
 
 	return (
 		<DashboardLayout	>
@@ -96,7 +185,7 @@ const params = useParams();
 							asChild
 							className="border-emerald-300 hover:bg-emerald-50"
 						>
-							<Link href={`/dashboard/tenant/properties/${params.id}/units/${params.unitId}/rent`}>
+							<Link href={`/dashboard/tenant/properties/${propertyId}/units/${unitId}/rent`}>
 								<ArrowLeft className="h-4 w-4 mr-2" />
 								Back to Units
 							</Link>
@@ -105,15 +194,15 @@ const params = useParams();
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 						<div>
 							<h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
-								Unit {data.unit.unitNumber}
+								Unit {unit.unitNumber}
 							</h1>
 							<p className="text-lg text-gray-600 flex items-center">
 								<Building className="h-5 w-5 mr-2" />
-								{data.property.name}
+								{property.name}
 							</p>
 							<p className="text-sm text-gray-500 flex items-center mt-1">
 								<MapPin className="h-4 w-4 mr-1" />
-								{data.property.address}
+								{property.address}
 							</p>
 						</div>
 						<div className="flex space-x-3">
@@ -128,7 +217,7 @@ const params = useParams();
 								className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg transform hover:scale-105 transition-all duration-300"
 							>
 								<Link
-									href={`/dashboard/tenant/properties/${params.id}/units/${params.unitId}/rent`}
+									href={`/dashboard/tenant/properties/${propertyId}/units/${unitId}/rent`}
 								>
 									Request to Rent
 								</Link>
@@ -156,10 +245,10 @@ const params = useParams();
 										Monthly Rent
 									</p>
 									<p className="text-3xl font-bold text-emerald-600">
-										{data.unit.monthlyRent.toLocaleString()} ETB
+										{unit.monthlyRent} ETB
 									</p>
 									<p className="text-sm text-gray-600">
-										Deposit: {data.unit.deposit.toLocaleString()} ETB
+										Deposit: {unit.deposit} ETB
 									</p>
 								</div>
 								<div className="space-y-2">
@@ -167,10 +256,10 @@ const params = useParams();
 										Unit Details
 									</p>
 									<p className="text-lg font-semibold text-gray-900">
-										{data.unit.area}
+										{unit.area}
 									</p>
 									<p className="text-sm text-gray-600">
-										{data.unit.bedrooms} bed • {data.unit.bathrooms} bath
+										{unit.bedrooms} bed • {unit.bathrooms} bath
 									</p>
 								</div>
 								<div className="space-y-2">
@@ -178,10 +267,10 @@ const params = useParams();
 										Available From
 									</p>
 									<p className="text-lg font-semibold text-gray-900">
-										{new Date(data.unit.availableFrom).toLocaleDateString()}
+										{unit.availableFrom}
 									</p>
 									<p className="text-sm text-gray-600">
-										Lease: {data.unit.leaseTerm}
+										Lease: {unit.leaseTerm}
 									</p>
 								</div>
 								<div className="space-y-2">
@@ -191,11 +280,11 @@ const params = useParams();
 									<div className="flex items-center space-x-1">
 										<Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
 										<span className="text-lg font-semibold">
-											{data.property.rating}
+											{property.rating}
 										</span>
 									</div>
 									<p className="text-sm text-gray-600">
-										{data.property.reviews} reviews
+										{property.reviews} reviews
 									</p>
 								</div>
 							</div>
@@ -217,47 +306,57 @@ const params = useParams();
 										Unit Images
 									</CardTitle>
 									<CardDescription>
-										Visual tour of Unit {data.unit.unitNumber}
+										Visual tour of Unit {unit.unitNumber}
 									</CardDescription>
 								</CardHeader>
 								<CardContent>
 									<div className="space-y-4">
 										{/* Main Image */}
-										<div className="relative">
-											<img
-												src={data.unit.images[selectedImage]}
-												alt={`Unit ${data.unit.unitNumber} - Image ${
-													selectedImage + 1
-												}`}
-												className="w-full h-96 object-cover rounded-2xl shadow-lg"
-											/>
-											<div className="absolute top-4 left-4">
-												<Badge className="bg-white/90 text-gray-800 font-semibold">
-													{selectedImage + 1} / {data.unit.images.length}
-												</Badge>
-											</div>
-										</div>
+<div className="relative">
+  {unit.images && unit.images.length > 0 ? (
+    <>
+      <img
+        src={unit.images[selectedImage]}
+        alt={`Unit ${unit.unitNumber} - Image ${selectedImage + 1}`}
+        className="w-full h-96 object-cover rounded-2xl shadow-lg"
+      />
+      <div className="absolute top-4 left-4">
+        <Badge className="bg-white/90 text-gray-800 font-semibold">
+          {selectedImage + 1} / {unit.images.length}
+        </Badge>
+      </div>
+    </>
+  ) : (
+    <div className="w-full h-96 bg-gray-200 flex items-center justify-center rounded-2xl shadow-lg">
+      No images available
+    </div>
+  )}
+</div>
 
-										{/* Thumbnail Gallery */}
-										<div className="grid grid-cols-4 gap-3">
-											{data.unit.images.map((image, index) => (
-												<button
-													key={index}
-													onClick={() => setSelectedImage(index)}
-													className={`relative rounded-lg overflow-hidden transition-all duration-300 ${
-														selectedImage === index
-															? "ring-4 ring-emerald-500 scale-105"
-															: "hover:scale-105 hover:shadow-lg"
-													}`}
-												>
-													<img
-														src={image}
-														alt={`Thumbnail ${index + 1}`}
-														className="w-full h-20 object-cover"
-													/>
-												</button>
-											))}
-										</div>
+
+									{/* Thumbnail Gallery */}
+{unit.images && unit.images.length > 0 && (
+  <div className="grid grid-cols-4 gap-3">
+    {unit.images.map((image, index) => (
+      <button
+        key={index}
+        onClick={() => setSelectedImage(index)}
+        className={`relative rounded-lg overflow-hidden transition-all duration-300 ${
+          selectedImage === index
+            ? "ring-4 ring-emerald-500 scale-105"
+            : "hover:scale-105 hover:shadow-lg"
+        }`}
+      >
+        <img
+          src={image}
+          alt={`Thumbnail ${index + 1}`}
+          className="w-full h-20 object-cover"
+        />
+      </button>
+    ))}
+  </div>
+)}
+
 									</div>
 								</CardContent>
 							</Card>
@@ -276,35 +375,35 @@ const params = useParams();
 								</CardHeader>
 								<CardContent>
 									<p className="text-gray-700 leading-relaxed text-lg mb-6">
-										{data.unit.description}
+										{unit.description}
 									</p>
 
 									<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 										<div className="text-center p-4 rounded-xl bg-blue-50 border border-blue-200">
 											<Bed className="h-8 w-8 text-blue-600 mx-auto mb-2" />
 											<p className="text-2xl font-bold text-blue-600">
-												{data.unit.bedrooms}
+												{unit.bedrooms}
 											</p>
 											<p className="text-sm text-blue-700">Bedrooms</p>
 										</div>
 										<div className="text-center p-4 rounded-xl bg-purple-50 border border-purple-200">
 											<Bath className="h-8 w-8 text-purple-600 mx-auto mb-2" />
 											<p className="text-2xl font-bold text-purple-600">
-												{data.unit.bathrooms}
+												{unit.bathrooms}
 											</p>
 											<p className="text-sm text-purple-700">Bathrooms</p>
 										</div>
 										<div className="text-center p-4 rounded-xl bg-emerald-50 border border-emerald-200">
 											<Home className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
 											<p className="text-2xl font-bold text-emerald-600">
-												{data.unit.area}
+												{unit.area}
 											</p>
 											<p className="text-sm text-emerald-700">Total Area</p>
 										</div>
 										<div className="text-center p-4 rounded-xl bg-orange-50 border border-orange-200">
 											<Building className="h-8 w-8 text-orange-600 mx-auto mb-2" />
 											<p className="text-2xl font-bold text-orange-600">
-												{data.unit.floor}
+												{unit.floor}
 											</p>
 											<p className="text-sm text-orange-700">Floor</p>
 										</div>
@@ -316,19 +415,22 @@ const params = useParams();
 										<h4 className="font-semibold mb-3 text-gray-900">
 											Unit Features
 										</h4>
-										<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-											{data.unit.amenities.map((amenity, index) => (
-												<div
-													key={index}
-													className="flex items-center space-x-2 p-3 rounded-xl bg-emerald-50 border border-emerald-100"
-												>
-													<div className="w-2 h-2 bg-emerald-500 rounded-full" />
-													<span className="text-sm text-emerald-700 font-medium">
-														{amenity}
-													</span>
-												</div>
-											))}
-										</div>
+									<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+  {unit.amenities && unit.amenities.length > 0 ? (
+    unit.amenities.map((amenity, index) => (
+      <div
+        key={index}
+        className="flex items-center space-x-2 p-3 rounded-xl bg-emerald-50 border border-emerald-100"
+      >
+        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+        <span className="text-sm text-emerald-700 font-medium">{amenity}</span>
+      </div>
+    ))
+  ) : (
+    <p className="text-sm text-gray-500">No amenities listed.</p>
+  )}
+</div>
+
 									</div>
 								</CardContent>
 							</Card>
@@ -356,7 +458,7 @@ const params = useParams();
 												Monthly Rent:
 											</span>
 											<span className="text-lg font-bold text-emerald-600">
-												{data.unit.monthlyRent.toLocaleString()} ETB
+{unit.monthlyRent?.toLocaleString() ?? "N/A"} ETB
 											</span>
 										</div>
 
@@ -365,7 +467,7 @@ const params = useParams();
 												Security Deposit:
 											</span>
 											<span className="text-lg font-bold text-blue-600">
-												{data.unit.deposit.toLocaleString()} ETB
+												{unit.deposit?.toLocaleString() ?? "N/A"} ETB
 											</span>
 										</div>
 
@@ -374,7 +476,7 @@ const params = useParams();
 												Available From:
 											</span>
 											<span className="text-sm font-bold text-purple-600">
-												{new Date(data.unit.availableFrom).toLocaleDateString()}
+{unit.availableFrom ? new Date(unit.availableFrom).toLocaleDateString() : "N/A"}
 											</span>
 										</div>
 
@@ -383,7 +485,7 @@ const params = useParams();
 												Lease Term:
 											</span>
 											<span className="text-sm font-bold text-orange-600">
-												{data.unit.leaseTerm}
+												{unit.leaseTerm}
 											</span>
 										</div>
 									</div>
@@ -399,36 +501,36 @@ const params = useParams();
 												<span className="text-gray-600">Furnished:</span>
 												<Badge
 													className={
-														data.unit.furnished
+														unit.furnished
 															? "bg-emerald-100 text-emerald-800"
 															: "bg-gray-100 text-gray-800"
 													}
 												>
-													{data.unit.furnished ? "Yes" : "No"}
+													{unit.furnished ? "Yes" : "No"}
 												</Badge>
 											</div>
 											<div className="flex justify-between">
 												<span className="text-gray-600">Pets Allowed:</span>
 												<Badge
 													className={
-														data.unit.petsAllowed
+														unit.petsAllowed
 															? "bg-emerald-100 text-emerald-800"
 															: "bg-gray-100 text-gray-800"
 													}
 												>
-													{data.unit.petsAllowed ? "Yes" : "No"}
+													{unit.petsAllowed ? "Yes" : "No"}
 												</Badge>
 											</div>
 											<div className="flex justify-between">
 												<span className="text-gray-600">Smoking:</span>
 												<Badge
 													className={
-														data.unit.smokingAllowed
+														unit.smokingAllowed
 															? "bg-emerald-100 text-emerald-800"
 															: "bg-gray-100 text-gray-800"
 													}
 												>
-													{data.unit.smokingAllowed ? "Allowed" : "Not Allowed"}
+													{unit.smokingAllowed ? "Allowed" : "Not Allowed"}
 												</Badge>
 											</div>
 										</div>
@@ -439,7 +541,7 @@ const params = useParams();
 										className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
 									>
 										<Link
-											href={`/dashboard/tenant/properties/${params.id}/units/${params.unitId}/rent`}
+											href={`/dashboard/tenant/properties/${propertyId}/units/${unitId}/rent`}
 										>
 											Request to Rent This Unit
 										</Link>
@@ -462,51 +564,49 @@ const params = useParams();
 								</CardHeader>
 								<CardContent>
 									<div className="space-y-4">
-										<div className="flex items-center space-x-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100">
-											<Avatar className="h-12 w-12 ring-4 ring-purple-200">
-												<AvatarImage src={data.owner.avatar} />
-												<AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold">
-													{data.owner.name
-														.split(" ")
-														.map((n) => n[0])
-														.join("")}
-												</AvatarFallback>
-											</Avatar>
-											<div className="flex-1">
-												<p className="font-semibold text-gray-900">
-													{data.owner.name}
-												</p>
-												<p className="text-sm text-gray-600">Property Owner</p>
-												<p className="text-sm text-purple-600 font-medium">
-													{data.owner.company}
-												</p>
-											</div>
-										</div>
+										{owner && (
+  <div className="flex items-center space-x-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100">
+    <Avatar className="h-12 w-12 ring-4 ring-purple-200">
+      <AvatarImage src={owner.avatar ?? undefined} />
+      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold">
+        {owner.name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")}
+      </AvatarFallback>
+    </Avatar>
+    <div className="flex-1">
+      <p className="font-semibold text-gray-900">{owner.name}</p>
+      <p className="text-sm text-gray-600">Property Owner</p>
+      <p className="text-sm text-purple-600 font-medium">{owner.company}</p>
+    </div>
+  </div>
+)}
 
-										<div className="space-y-3">
-											<div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-												<div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-													<Phone className="h-5 w-5 text-emerald-600" />
-												</div>
-												<div>
-													<p className="text-sm font-medium text-gray-900">
-														{data.owner.phone}
-													</p>
-													<p className="text-xs text-gray-500">Phone</p>
-												</div>
-											</div>
-											<div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-												<div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-													<Mail className="h-5 w-5 text-blue-600" />
-												</div>
-												<div>
-													<p className="text-sm font-medium text-gray-900">
-														{data.owner.email}
-													</p>
-													<p className="text-xs text-gray-500">Email</p>
-												</div>
-											</div>
-										</div>
+
+										{owner && (
+  <div className="space-y-3">
+    <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+        <Phone className="h-5 w-5 text-emerald-600" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-gray-900">{owner.phone}</p>
+        <p className="text-xs text-gray-500">Phone</p>
+      </div>
+    </div>
+    <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+        <Mail className="h-5 w-5 text-blue-600" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-gray-900">{owner.email}</p>
+        <p className="text-xs text-gray-500">Email</p>
+      </div>
+    </div>
+  </div>
+)}
+
 
 										<Button
 											variant="outline"

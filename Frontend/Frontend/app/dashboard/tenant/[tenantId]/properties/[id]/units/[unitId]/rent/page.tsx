@@ -50,25 +50,27 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function RentRequestPage() {
   const params = useParams();
-  const tenatId = params.tenatId;
+  const tenantId = params.tenantId;
   const router = useRouter();
   const { toast } = useToast();
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-const [property, setProperty] = useState<{ id: number; name: string; address: string } | null>(null);
-//const data = getUnitData(params.id as string, params.unitId as string);
+  const [property, setProperty] = useState<{ id: number; name: string; address: string } | null>(null);
 
-const [unit, setUnit] = useState<{ 
-  id: string; 
-  unitNumber: string; 
-  monthlyRent: number; 
-  deposit: number; 
-  availableFrom: string; 
-} | null>(null);
-const [moveInDate, setMoveInDate] = useState<Date | undefined>(undefined);
+  const [unit, setUnit] = useState<{
+    id: string;
+    unitNumber: string;
+    monthlyRent: number;
+    deposit: number;
+    availableFrom: string;
+  } | null>(null);
 
+  const [moveInDate, setMoveInDate] = useState<Date | undefined>(undefined);
+
+  // Extended formData to include lease signing fields
   const [formData, setFormData] = useState({
-    // Personal Information (you can later replace these with user profile fetch)
+    // Personal Information
     fullName: "",
     phone: "",
     email: "",
@@ -100,77 +102,156 @@ const [moveInDate, setMoveInDate] = useState<Date | undefined>(undefined);
 
     // Lease Type
     leaseType: "online", // online or in-person
+
+    // Lease Signing specific
+    leaseStartDate: "",
+    leaseEndDate: "",
+    rentAmount: "",       // will default to unit monthlyRent
+    paymentMethod: "",
+    digitalSignature: "",
   });
 
- useEffect(() => {
-  async function fetchData() {
-    if (!params.id || !params.unitId) return;
+  useEffect(() => {
+    async function fetchData() {
+      if (!params.id || !params.unitId) return;
 
-    try {
-      // Add expected response types here:
-      const propertyRes = await axios.get<{
-        id: number;
-        name: string;
-        address: string;
-      }>(`http://localhost:5000/properties/${params.id}`);
+      try {
+        const propertyRes = await axios.get<{
+          id: number;
+          name: string;
+          address: string;
+        }>(`http://localhost:5000/properties/${params.id}`);
 
-      const unitRes = await axios.get<{
-        id: string;
-        unitNumber: string;
-        monthlyRent: number;
-        deposit: number;
-        availableFrom: string;
-      }>(`http://localhost:5000/properties/${params.id}/units/${params.unitId}`);
+        const unitRes = await axios.get<{
+          id: string;
+          unitNumber: string;
+          monthlyRent: number;
+          deposit: number;
+          availableFrom: string;
+        }>(`http://localhost:5000/properties/${params.id}/units/${params.unitId}`);
 
-      setProperty(propertyRes.data);
-      setUnit(unitRes.data);
-    } catch (err) {
-      setError("Failed to load property or unit data.");
-    }
+        setProperty(propertyRes.data);
+        setUnit(unitRes.data);
+
+setFormData((f) => {
+  const start = new Date(unitRes.data.availableFrom);
+
+  if (isNaN(start.getTime())) {
+    console.error("Invalid availableFrom date:", unitRes.data.availableFrom);
+    return {
+      ...f,
+      rentAmount: unitRes.data.monthlyRent.toString(),
+      leaseStartDate: "",
+      leaseEndDate: "",
+    };
   }
 
-  fetchData();
-}, [params.id, params.unitId]);
+  start.setMonth(start.getMonth() + parseInt(f.leaseDuration, 10));
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    // Simple validation
-    if (
-      !formData.monthlyIncome ||
-      !formData.emergencyContactName ||
-      !formData.emergencyContactPhone
-    ) {
-      setError("Please fill in all required fields");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!formData.agreeToTerms || !formData.agreeToBackgroundCheck) {
-      setError("Please agree to all terms and conditions");
-      setIsLoading(false);
-      return;
-    }
-
-    // TODO: Replace with actual API call to submit rental request
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Rental Request Submitted!",
-        description: `Your request for Unit ${unit?.unitNumber} has been submitted successfully. You'll receive updates via SMS and email.`,
-      });
-
-      if (formData.leaseType === "online") {
-       router.push(`/dashboard/tenant/${params.tenantId}/properties/${params.id}/units/${params.unitId}/lease`);
-
-      } else {
-        router.push(`/dashboard/tenant/rental-requests`);
-      }
-    }, 2000);
+  return {
+    ...f,
+    rentAmount: unitRes.data.monthlyRent.toString(),
+    leaseStartDate: unitRes.data.availableFrom,
+    leaseEndDate: format(start, "yyyy-MM-dd"),
   };
+});
+
+
+      } catch (err) {
+        setError("Failed to load property or unit data.");
+      }
+    }
+    fetchData();
+  }, [params.id, params.unitId]);
+
+ const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) => {
+  const { name, value, type } = e.target;
+
+
+  const checked =
+    e.target instanceof HTMLInputElement && (type === "checkbox" || type === "radio")
+      ? e.target.checked
+      : undefined;
+
+  setFormData((f) => ({
+    ...f,
+    [name]: checked !== undefined ? checked : value,
+  }));
+};
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
+
+  if (
+    !formData.monthlyIncome ||
+    !formData.emergencyContactName ||
+    !formData.emergencyContactPhone
+  ) {
+    setError("Please fill in all required fields");
+    setIsLoading(false);
+    return;
+  }
+
+  if (!formData.agreeToTerms || !formData.agreeToBackgroundCheck) {
+    setError("Please agree to all terms and conditions");
+    setIsLoading(false);
+    return;
+  }
+
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    setError("You must be logged in to submit a rental request.");
+    setIsLoading(false);
+    return;
+  }
+
+  try {
+    await axios.post(
+      `http://localhost:5000/properties/${params.id}/units/${params.unitId}/rental`,
+      {
+        tenantId: Number(tenantId), 
+        propertyId: Number(params.id),
+        unitId: Number(params.unitId),
+        startDate: new Date(formData.leaseStartDate).toISOString(),
+        endDate: new Date(formData.leaseEndDate).toISOString(),
+        rentAmount: Number(formData.rentAmount), 
+        paymentMethod: formData.paymentMethod,
+        digitalSignature: formData.digitalSignature,
+        status: "pending",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast({
+      title: "Rental Request",
+      description: `Your request for Unit ${unit?.unitNumber} have been submitted successfully.`,
+    });
+
+    if (formData.leaseType === "online") {
+      router.push(
+        `/dashboard/tenant/${tenantId}/properties/${params.id}/units/${params.unitId}/lease`
+      );
+    } else {
+      router.push(`/dashboard/tenant/rental-requests`);
+    }
+  } catch (err: any) {
+    console.error("Rental request failed:", err.response?.data || err.message);
+    setError(
+      err.response?.data?.message?.join(", ") ||
+        "Failed to submit rental request"
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (error)
     return <p className="text-red-600 mt-4 text-center font-semibold">{error}</p>;
@@ -349,139 +430,166 @@ const [moveInDate, setMoveInDate] = useState<Date | undefined>(undefined);
 								</Card>
 							</div>
 
-							{/* Rental Preferences */}
-							<div
-								className="animate-in fade-in slide-in-from-left-4 duration-700 delay-600"
-								style={{ animationFillMode: "forwards" }}
-							>
-								<Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-									<CardHeader>
-										<CardTitle className="text-xl font-bold text-gray-900">
-											Rental Preferences
-										</CardTitle>
-										<CardDescription>
-											Your preferences for the lease
-										</CardDescription>
-									</CardHeader>
-									<CardContent className="space-y-6">
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											<div className="space-y-2">
-												<Label
-													htmlFor="leaseDuration"
-													className="text-sm font-semibold text-gray-700"
-												>
-													Preferred Lease Duration
-												</Label>
-												<Select
-													value={formData.leaseDuration}
-													onValueChange={(value) =>
-														setFormData({ ...formData, leaseDuration: value })
-													}
-												>
-													<SelectTrigger className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="6">6 months</SelectItem>
-														<SelectItem value="12">12 months</SelectItem>
-														<SelectItem value="24">24 months</SelectItem>
-														<SelectItem value="36">36 months</SelectItem>
-													</SelectContent>
-												</Select>
-											</div>
+						{/* Rental Preferences */}
+<div
+  className="animate-in fade-in slide-in-from-left-4 duration-700 delay-600"
+  style={{ animationFillMode: "forwards" }}
+>
+  <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+    <CardHeader>
+      <CardTitle className="text-xl font-bold text-gray-900">
+        Rental Preferences
+      </CardTitle>
+      <CardDescription>
+        Your preferences for the lease
+      </CardDescription>
+    </CardHeader>
 
-											<div className="space-y-2">
-												<Label
-													htmlFor="numberOfOccupants"
-													className="text-sm font-semibold text-gray-700"
-												>
-													Number of Occupants
-												</Label>
-												<Select
-													value={formData.numberOfOccupants}
-													onValueChange={(value) =>
-														setFormData({
-															...formData,
-															numberOfOccupants: value,
-														})
-													}
-												>
-													<SelectTrigger className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="1">1 person</SelectItem>
-														<SelectItem value="2">2 people</SelectItem>
-														<SelectItem value="3">3 people</SelectItem>
-														<SelectItem value="4">4 people</SelectItem>
-														<SelectItem value="5+">5+ people</SelectItem>
-													</SelectContent>
-												</Select>
-											</div>
-										</div>
+    <CardContent className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Preferred Lease Duration */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="leaseDuration"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Preferred Lease Duration
+          </Label>
+          <Select
+            value={formData.leaseDuration}
+            onValueChange={(value) =>
+              setFormData({ ...formData, leaseDuration: value })
+            }
+          >
+            <SelectTrigger className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500">
+              <SelectValue placeholder="Select duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="6">6 months</SelectItem>
+              <SelectItem value="12">12 months</SelectItem>
+              <SelectItem value="24">24 months</SelectItem>
+              <SelectItem value="36">36 months</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-										<div className="space-y-2">
-											<Label className="text-sm font-semibold text-gray-700">
-												Preferred Move-in Date
-											</Label>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														variant="outline"
-														className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500 justify-start text-left font-normal"
-													>
-														<Calendar className="mr-2 h-4 w-4" />
-														{moveInDate
-															? format(moveInDate, "PPP")
-															: "Select move-in date"}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0">
-													<CalendarComponent
-														mode="single"
-														selected={moveInDate}
-														onSelect={setMoveInDate}
-														initialFocus
-													/>
-												</PopoverContent>
-											</Popover>
-										</div>
+        {/* Number of Occupants */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="numberOfOccupants"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Number of Occupants
+          </Label>
+          <Select
+            value={formData.numberOfOccupants}
+            onValueChange={(value) =>
+              setFormData({
+                ...formData,
+                numberOfOccupants: value,
+              })
+            }
+          >
+            <SelectTrigger className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500">
+              <SelectValue placeholder="Select number" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1 person</SelectItem>
+              <SelectItem value="2">2 people</SelectItem>
+              <SelectItem value="3">3 people</SelectItem>
+              <SelectItem value="4">4 people</SelectItem>
+              <SelectItem value="5+">5+ people</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-										<div className="grid grid-cols-2 gap-6">
-											<div className="flex items-center space-x-3">
-												<Checkbox
-													id="hasChildren"
-													checked={formData.hasChildren}
-													onCheckedChange={(checked) =>
-														setFormData({
-															...formData,
-															hasChildren: checked as boolean,
-														})
-													}
-												/>
-												<Label htmlFor="hasChildren" className="text-sm">
-													I have children
-												</Label>
-											</div>
-											<div className="flex items-center space-x-3">
-												<Checkbox
-													id="hasPets"
-													checked={formData.hasPets}
-													onCheckedChange={(checked) =>
-														setFormData({
-															...formData,
-															hasPets: checked as boolean,
-														})
-													}
-												/>
-												<Label htmlFor="hasPets" className="text-sm">
-													I have pets
-												</Label>
-											</div>
-										</div>
-									</CardContent>
-								</Card>
-							</div>
+      {/* Preferred Move-in Date */}
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold text-gray-700">
+          Preferred Move-in Date
+        </Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500 justify-start text-left font-normal"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {moveInDate ? format(moveInDate, "PPP") : "Select move-in date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <CalendarComponent
+              mode="single"
+              selected={moveInDate}
+              onSelect={setMoveInDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Extra Preferences */}
+      <div className="grid grid-cols-2 gap-6">
+        <div className="flex items-center space-x-3">
+          <Checkbox
+            id="hasChildren"
+            checked={formData.hasChildren}
+            onCheckedChange={(checked) =>
+              setFormData({
+                ...formData,
+                hasChildren: checked as boolean,
+              })
+            }
+          />
+          <Label htmlFor="hasChildren" className="text-sm">
+            I have children
+          </Label>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Checkbox
+            id="hasPets"
+            checked={formData.hasPets}
+            onCheckedChange={(checked) =>
+              setFormData({
+                ...formData,
+                hasPets: checked as boolean,
+              })
+            }
+          />
+          <Label htmlFor="hasPets" className="text-sm">
+            I have pets
+          </Label>
+        </div>
+      </div>
+
+      {/* Lease Dates Preview */}
+      {formData.leaseDuration && (
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg border text-sm text-gray-700">
+          {(() => {
+            const start = moveInDate ? new Date(moveInDate) : new Date();
+            const end = new Date(start);
+            end.setMonth(end.getMonth() + parseInt(formData.leaseDuration, 10));
+            return (
+              <>
+                <p>
+                  Lease Start Date:{" "}
+                  <strong>{format(start, "PPP")}</strong>
+                </p>
+                <p>
+                  Lease End Date:{" "}
+                  <strong>{format(end, "PPP")}</strong>
+                </p>
+              </>
+            );
+          })()}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+</div>
 
 							{/* Emergency Contact & References */}
 							<div

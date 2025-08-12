@@ -57,11 +57,13 @@ interface Property {
 	};
 }
 
+
 export default function MyPropertiesPage() {
 const [properties, setProperties] = useState<Property[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [filterStatus, setFilterStatus] = useState("all");
 	const [loading, setLoading] = useState(false);
+	const [selectedPropertyName, setSelectedPropertyName] = useState<string>("");
 	const [error, setError] = useState("");
  const backendUrl = "http://localhost:5000";
  const { tenantId } = useParams();
@@ -90,7 +92,12 @@ useEffect(() => {
         }
       );
 
+	  
       setProperties(response.data);
+
+	   if (response.data.length > 0) {
+          setSelectedPropertyName(response.data[0].property);
+        }
     } catch (err: any) {
       console.error("Error fetching properties:", err);
       setError(err.response?.data?.message || "Failed to load properties");
@@ -168,10 +175,10 @@ const handleEdit = (id: string) => {
 		return Math.min(Math.max(progress, 0), 100);
 	};
 
-	const totalRent = filteredProperties.reduce(
-		(sum, p) => sum + p.monthlyRent,
-		0
-	);
+const totalUnits = properties.reduce((sum, property) => sum + (property.totalUnits || 0), 0);
+const totalOccupiedUnits = properties.reduce((sum, property) => sum + (property.occupiedUnits || 0), 0);
+
+
 	const activeLeases = filteredProperties.filter(
 		(p) => p.status === "active"
 	).length;
@@ -235,10 +242,13 @@ const handleEdit = (id: string) => {
 							<CardContent className="p-6">
 								<div className="flex items-center justify-between">
   <div className="space-y-3">
-    <p className="text-sm font-semibold text-gray-600">Total Monthly Rent</p>
-    <p className="text-3xl font-bold text-gray-900">
-      {((Number(totalRent) || 0) / 1000).toFixed(0)} ETB
-    </p>
+    <p className="text-sm font-semibold text-gray-600">My Rented Property ID</p>
+    {properties.length > 0 && (
+  <p className="text-3xl font-bold text-gray-900">
+    {properties[0].id}
+  </p>
+)}
+
   </div>
   <div className="p-4 rounded-3xl bg-blue-50 group-hover:scale-125 transition-transform duration-500 shadow-lg">
     <DollarSign className="h-8 w-8 text-blue-600" />
@@ -342,7 +352,7 @@ const handleEdit = (id: string) => {
                         property.occupiedUnits,
                         property.totalUnits
                       )}
-                      %
+                    %
                     </p>
                     <p className="text-muted-foreground text-xs">Occupied</p>
                   </div>

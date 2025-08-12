@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn  } from 'typeorm';
 import { Tenant } from '../tenant/entities/tenant.entity';
 import { User } from '../iam/users/entities/user.entity';
 import { Payment } from '../payments/payment.entity';
@@ -9,8 +9,8 @@ export type LeaseStatus = "active" | "pending" | "terminated" | "expired" | "exp
 
 @Entity()
 export class Lease {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ type: 'date' })
   startDate: Date;
@@ -41,29 +41,20 @@ export class Lease {
   @Column()
   tenantId: number;
 
-  @ManyToOne(() => User, (user) => user.leases, { nullable: false, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
-  @Column()
-  userId: number;
-
   @OneToMany(() => Payment, (payment) => payment.lease)
   payments: Payment[];
 
-  @ManyToOne(() => Property, (property) => property.leases)
+  @ManyToOne(() => Property, (property) => property.leases, { nullable: false })
   @JoinColumn({ name: 'propertyId' })
   property: Property;
 
-  @Column({ nullable: true })
-  propertyId?: number;
+  @Column()
+  propertyId: number;
 
-  @ManyToOne(() => Unit, (unit) => unit.leases)
+  @ManyToOne(() => Unit, (unit) => unit.leases, { nullable: false })
   @JoinColumn({ name: 'unitId' })
   unit: Unit;
 
-  @Column({ nullable: true })
-  unitId?: number;
-
-  
+  @Column()
+  unitId: number;
 }

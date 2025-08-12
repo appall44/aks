@@ -31,5 +31,5 @@ export class Landlord {
 
   @OneToOne(() => User, { eager: true, nullable: true })
   @JoinColumn()
-  user?: User;  // This is the assigned owner/admin user account
+  user?: User;  
 }

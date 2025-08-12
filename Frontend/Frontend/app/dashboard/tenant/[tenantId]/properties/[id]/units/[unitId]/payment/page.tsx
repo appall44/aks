@@ -38,12 +38,6 @@ const paymentMethods = [
   },
 ];
 
-interface Lease {
-  monthlyRent: number;
-  deposit: number;
-  // other fields as needed
-}
-
 type Owner = {
   name: string;
   bankName: string;
@@ -55,19 +49,33 @@ type Property = {
   id: string;
   name: string;
   owner: Owner;
-  // other props as needed
+  address: string;
 };
-
+ 
 type Unit = {
   id: string;
   unitNumber: string;
   monthlyRent: number;
   deposit: number;
-  // other props as needed
 };
 
+type Lease = {
+  id: string; 
+  startDate: string;
+  endDate: string;
+  duration: string;
+  paymentDueDate: number;
+  lateFee: number;
+  noticePeriod: number;
+  tenantId?: number; 
+  unitId?: number;   
+  
+};
+
+
+
 export default function CompletePaymentPage() {
-  const params = useParams() as { id?: string; unitId?: string };
+  const params = useParams() as { id?: string; unitId?: string ,tenantId?:string};
   const router = useRouter();
   const { toast } = useToast();
    const { tenantId } = useParams();
@@ -75,6 +83,7 @@ export default function CompletePaymentPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [unit, setUnit] = useState<Unit | null>(null);
   const [lease, setLease] = useState<Lease | null>(null);
+ const [owner, setOwner] = useState<Owner | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
@@ -96,43 +105,47 @@ export default function CompletePaymentPage() {
     (m) => m.value === formData.paymentMethod
   );
 
-  useEffect(() => {
-    async function fetchLeaseData() {
-      if (!params.id || !params.unitId) return;
+ useEffect(() => {
+  async function fetchLeaseData() {
+  if (!params.id || !params.unitId) return;
 
-      try {
-        setFetchError("");
-        const token = localStorage.getItem("accessToken") || "";
+  try {
+    setFetchError("");
+    console.log("Fetching property...");
+    const token = localStorage.getItem("accessToken");
+    console.log("Token:", token);
 
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
 
-        const [propertyRes, unitRes, leaseRes] = await Promise.all([
-          axios.get<Property>(`http://localhost:5000/properties/${params.id}`, config),
-          axios.get<Unit>(
-            `http://localhost:5000/properties/${params.id}/units/${params.unitId}`,
-            config
-          ),
-          axios.get<Lease>(
-            `http://localhost:5000/leases/property/${params.id}/unit/${params.unitId}`,
-            config
-          ),
-        ]);
+    const propertyRes = await axios.get<Property>(`http://localhost:5000/properties/${params.id}`, config);
+    console.log("Property fetched", propertyRes.data);
 
-        setProperty(propertyRes.data);
-        setUnit(unitRes.data);
-        setLease(leaseRes.data);
-      } catch (err) {
-        console.error(err);
-        setFetchError("Failed to load lease information. Please try again.");
-      }
+    const unitRes = await axios.get<Unit>(`http://localhost:5000/properties/${params.id}/units/${params.unitId}`, config);
+    console.log("Unit fetched", unitRes.data);
+
+    const leaseRes = await axios.get<Lease>(`http://localhost:5000/properties/${params.id}/units/${params.unitId}/lease`, config);
+    console.log("Lease fetched", leaseRes.data);
+
+    setProperty(propertyRes.data);
+    setUnit(unitRes.data);
+    setLease(leaseRes.data);
+  } catch (error: unknown) {
+    console.error(error);
+    if (error instanceof Error) {
+      setFetchError(error.message);
+    } else {
+      setFetchError("Failed to load lease information. Please try again.");
     }
+  }
+}
 
-    fetchLeaseData();
-  }, [params.id, params.unitId]);
+
+  fetchLeaseData();
+}, [params.id, params.unitId]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -166,27 +179,44 @@ export default function CompletePaymentPage() {
           Authorization: `Bearer ${token}`,
         },
       };
+interface PaymentPayload {
+  tenantId: number;
+  leaseId?: string;
+  propertyId: number;
+  unitId: number;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  referenceNumber: string;
+  notes: string;
+  date: string;
+}
 
-const paymentPayload = {
-  tenantId: Number(tenantId),   
+const paymentPayload: PaymentPayload = {
+  tenantId: Number(params.tenantId),
+  propertyId: Number(params.id),
+  unitId: Number(params.unitId),
   amount: totalAmount,
   paymentMethod: formData.paymentMethod,
-  status: 'paid',                // or 'unpaid'
+  status: 'paid',
   referenceNumber: formData.referenceNumber,
   notes: formData.notes,
   date: new Date().toISOString(),
 };
 
+if (lease?.id) {
+ paymentPayload.leaseId = lease.id;
+}
 
 
-      await axios.post(`http://localhost:5000/tenant/${tenantId}/payments`, paymentPayload, config);
+      await axios.post(`http://localhost:5000/properties/${params.id}/units/${params.unitId}/payment`, paymentPayload, config);
 
       toast({
         title: "Payment Submitted Successfully!",
         description: `Your payment of ${totalAmount.toLocaleString()} ETB has been submitted for verification.`,
       });
 
-      router.push(`http://localhost:5000/tenant/${tenantId}/payments`);
+      router.push(`/dashboard/tenant/${tenantId}/payments`);
     } catch (error) {
       console.error(error);
       toast({
@@ -216,251 +246,342 @@ const paymentPayload = {
     );
   }
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="animate-in fade-in duration-1000">
-          <div className="flex items-center space-x-4 mb-6">
-            <Button
-              variant="outline"
-              asChild
-              className="border-emerald-300 hover:bg-emerald-50"
-            >
-              <Link
-                href={`/dashboard/tenant/properties/${params.id}/units/${params.unitId}/lease`}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Lease Agreement
-              </Link>
-            </Button>
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
-              Complete Payment
-            </h1>
-            <p className="text-lg text-gray-600">
-              Pay for Unit {unit.unitNumber} to finalize your lease
-            </p>
+	return (
+		<DashboardLayout
+		
+		>
+			<div className="space-y-8">
+				{/* Header */}
+				<div className="animate-in fade-in duration-1000">
+					<div className="flex items-center space-x-4 mb-6">
+						<Button
+							variant="outline"
+							asChild
+							className="border-emerald-300 hover:bg-emerald-50"
+						>
+							<Link
+								href={`/dashboard/tenant/properties/${params.id}/units/${params.unitId}/lease`}
+							>
+								<ArrowLeft className="h-4 w-4 mr-2" />
+								Back to Lease Agreement
+							</Link>
+						</Button>
+					</div>
+					<div>
+						<h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
+							Complete Payment
+						</h1>
+						<p className="text-lg text-gray-600">
+							Pay for Unit {unit.unitNumber} to finalize your lease
+						</p>
+						<p className="text-sm text-gray-500">
+							Submit payment for first month rent and security deposit
+						</p>
+					</div>
+				</div>
+				<form onSubmit={handleSubmit}>
+					<div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+						{/* Main Form */}
+						<div className="xl:col-span-2 space-y-8">
+							{/* Payment Overview */}
+							<div
+								className="animate-in fade-in slide-in-from-left-4 duration-700 delay-300"
+								style={{ animationFillMode: "forwards" }}
+							>
+								<Card className="shadow-xl border-0 bg-gradient-to-r from-emerald-50 to-blue-50 backdrop-blur-sm">
+									<CardHeader>
+										<CardTitle className="flex items-center space-x-3 text-xl">
+											<Building className="h-6 w-6 text-emerald-600" />
+											<span>Payment Overview</span>
+										</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+											<div className="space-y-2">
+												<p className="text-sm font-medium text-gray-500">
+													Property & Unit
+												</p>
+												<p className="text-lg font-semibold text-gray-900">
+													{property.name}
+												</p>
+												<p className="text-sm text-gray-600">
+													Unit {unit.unitNumber}
+												</p>
+											</div>
+											<div className="space-y-2">
+												<p className="text-sm font-medium text-gray-500">
+													Payment Breakdown
+												</p>
+												<p className="text-sm text-gray-600">
+													Rent: {unit.monthlyRent.toLocaleString()} ETB
+												</p>
+												<p className="text-sm text-gray-600">
+													Deposit: {unit.deposit.toLocaleString()} ETB
+												</p>
+											</div>
+											<div className="space-y-2">
+												<p className="text-sm font-medium text-gray-500">
+													Total Amount
+												</p>
+												<p className="text-2xl font-bold text-emerald-600">
+													{totalAmount.toLocaleString()} ETB
+												</p>
+												<p className="text-sm text-gray-600">Due immediately</p>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							</div>
 
-            <p className="text-sm text-gray-500">
-              Submit payment for first month rent and security deposit
-            </p>
-          </div>
-        </div>
+							{/* Payment Method Selection */}
+							<div
+								className="animate-in fade-in slide-in-from-left-4 duration-700 delay-600"
+								style={{ animationFillMode: "forwards" }}
+							>
+								<Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+									<CardHeader>
+										<CardTitle className="text-xl font-bold text-gray-900">
+											Payment Method
+										</CardTitle>
+										<CardDescription>
+											Choose how you want to make your payment
+										</CardDescription>
+									</CardHeader>
+									<CardContent className="space-y-6">
+										{error && (
+											<Alert variant="destructive">
+												<AlertDescription>{error}</AlertDescription>
+											</Alert>
+										)}
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            {/* Main Form */}
-            <div className="xl:col-span-2 space-y-8">
-              {/* Payment Overview */}
-              <div
-                className="animate-in fade-in slide-in-from-left-4 duration-700 delay-300"
-                style={{ animationFillMode: "forwards" }}
-              >
-                <Card className="shadow-xl border-0 bg-gradient-to-r from-emerald-50 to-blue-50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-3 text-xl">
-                      <Building className="h-6 w-6 text-emerald-600" />
-                      <span>Payment Overview</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-500">
-                          Property & Unit
-                        </p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {property.name}
-                        </p>
-                        <p className="text-sm text-gray-600">Unit {unit.unitNumber}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-500">
-                          Payment Breakdown
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Rent: {unit.monthlyRent.toLocaleString()} ETB
-                        </p>
-                        <p className="text-sm text-gray-600">
-  Deposit: {unit && typeof unit.deposit === "number" ? unit.deposit.toLocaleString() : "N/A"} ETB
-</p>
+										<RadioGroup
+											value={formData.paymentMethod}
+											onValueChange={(value) =>
+												setFormData({ ...formData, paymentMethod: value })
+											}
+										>
+											<div className="space-y-4">
+												{paymentMethods.map((method) => (
+													<div
+														key={method.value}
+														className="flex items-center space-x-3"
+													>
+														<RadioGroupItem
+															value={method.value}
+															id={method.value}
+														/>
+														<Label
+															htmlFor={method.value}
+															className="flex-1 cursor-pointer"
+														>
+															<div className="flex items-center space-x-4 p-4 rounded-xl border-2 border-gray-200 hover:border-emerald-300 transition-colors">
+																<span className="text-3xl">{method.icon}</span>
+																<div className="flex-1">
+																	<p className="font-semibold text-gray-900">
+																		{method.label}
+																	</p>
+																	<p className="text-sm text-gray-600">
+																		{method.description}
+																	</p>
+																	<p className="text-xs text-emerald-600 font-medium">
+																		{method.processingTime}
+																	</p>
+																</div>
+															</div>
+														</Label>
+													</div>
+												))}
+											</div>
+										</RadioGroup>
 
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-500">Total Amount</p>
-                        <p className="text-2xl font-bold text-emerald-600">
-                          {totalAmount.toLocaleString()} ETB
-                        </p>
-                        <p className="text-sm text-gray-600">Due immediately</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+								{selectedMethod && owner && (
+  <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
+    <h4 className="font-semibold text-blue-800 mb-2">
+      Payment Instructions for {selectedMethod.label}
+    </h4>
 
-              {/* Payment Method Selection */}
-              <div
-                className="animate-in fade-in slide-in-from-left-4 duration-700 delay-500"
-                style={{ animationFillMode: "forwards" }}
-              >
-                <Card className="shadow-xl border-0">
-                  <CardHeader>
-                    <CardTitle>Select Payment Method</CardTitle>
-                    <CardDescription>
-                      Choose your preferred payment option
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RadioGroup
-                      onValueChange={(value) =>
-                        setFormData((prev) => ({ ...prev, paymentMethod: value }))
-                      }
-                      value={formData.paymentMethod}
-                      name="paymentMethod"
-                      className="flex flex-col space-y-3"
-                      required
-                    >
-                      {paymentMethods.map((method) => (
-                        <Label
-                          key={method.value}
-                          htmlFor={method.value}
-                          className="flex cursor-pointer items-center space-x-3 rounded-lg border border-gray-300 bg-white p-4 text-base font-medium text-gray-900 shadow-sm transition-colors hover:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600 focus-within:ring-offset-2"
-                        >
-                          <RadioGroupItem
-                            value={method.value}
-                            id={method.value}
-                            className="peer sr-only"
-                          />
-                          <span className="text-xl">{method.icon}</span>
-                          <div>
-                            <p>{method.label}</p>
-                            <p className="text-sm text-gray-500">
-                              {method.description}
-                            </p>
-                            <p className="text-xs italic text-gray-400 mt-1">
-                              {method.processingTime}
-                            </p>
-                          </div>
-                        </Label>
-                      ))}
-                    </RadioGroup>
-
-                    {selectedMethod && (
-                      <Alert variant="default" className="mt-4">
-                        <AlertDescription>
-                          You selected: <strong>{selectedMethod.label}</strong> —{" "}
-                          {selectedMethod.processingTime}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Reference Number & Notes */}
-              <div
-                className="animate-in fade-in slide-in-from-left-4 duration-700 delay-700"
-                style={{ animationFillMode: "forwards" }}
-              >
-                <Card className="shadow-xl border-0">
-                  <CardHeader>
-                    <CardTitle>Reference & Notes</CardTitle>
-                    <CardDescription>
-                      Provide your payment reference and any additional notes
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="referenceNumber">Payment Reference Number</Label>
-                      <Input
-                        id="referenceNumber"
-                        name="referenceNumber"
-                        type="text"
-                        value={formData.referenceNumber}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            referenceNumber: e.target.value,
-                          }))
-                        }
-                        placeholder="Enter your payment reference"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="notes">Additional Notes</Label>
-                      <Textarea
-                        id="notes"
-                        name="notes"
-                        value={formData.notes}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            notes: e.target.value,
-                          }))
-                        }
-                        placeholder="Optional notes"
-                        rows={4}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {error && (
-                <p className="text-red-600 text-center mt-2">{error}</p>
-              )}
-
-              <div className="flex justify-center mt-6">
-                <Button
-                  type="submit"
-                  className="w-full max-w-sm"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Submitting..." : "Submit Payment"}
-                </Button>
-              </div>
-            </div>
-
-            {/* Owner Info Sidebar */}
-            <div
-              className="animate-in fade-in slide-in-from-right-4 duration-700 delay-700"
-              style={{ animationFillMode: "forwards" }}
-            >
-              <Card className="shadow-xl border-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <CreditCard className="h-6 w-6 text-emerald-600" />
-                    <span>Owner Payment Details</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Payment details for the property owner
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Owner Name</p>
-                    <p className="text-lg font-semibold">{property.owner.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Bank Name</p>
-                    <p className="text-lg font-semibold">{property.owner.bankName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Account Number</p>
-                    <p className="text-lg font-semibold">{property.owner.bankAccount}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Phone</p>
-                    <p className="text-lg font-semibold">{property.owner.phone}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </form>
+    {selectedMethod.value === "bank_transfer" && (
+      <div className="text-blue-700 text-sm space-y-1">
+        <p>• Bank: {owner?.bankName}</p>
+        <p>• Account Name: {owner?.name}</p>
+        <p>• Account Number: {owner?.bankAccount}</p>
+        <p>• Amount: {totalAmount.toLocaleString()} ETB</p>
+        <p>
+          • Reference: Unit {unit.unitNumber} - {property.name}
+        </p>
       </div>
-    </DashboardLayout>
-  );
+    )}
+
+    {selectedMethod.value === "mobile_money" && (
+      <div className="text-blue-700 text-sm space-y-1">
+        <p>• CBE Birr: {owner?.phone}</p>
+        <p>• M-Birr: {owner?.phone}</p>
+        <p>• Amount: {totalAmount.toLocaleString()} ETB</p>
+        <p>• Reference: Unit {unit.unitNumber} - Your Name</p>
+        <p>• Please take a screenshot of the transaction for verification</p>
+      </div>
+    )}
+  </div>
+)}
+
+
+										<div className="space-y-4">
+											<div className="space-y-2">
+												<Label
+													htmlFor="referenceNumber"
+													className="text-sm font-semibold text-gray-700"
+												>
+													Transaction Reference Number
+												</Label>
+												<Input
+													id="referenceNumber"
+													placeholder="Enter transaction reference or receipt number"
+													className="h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500"
+													value={formData.referenceNumber}
+													onChange={(e) =>
+														setFormData({
+															...formData,
+															referenceNumber: e.target.value,
+														})
+													}
+												/>
+											</div>
+
+											<div className="space-y-2">
+												<Label
+													htmlFor="notes"
+													className="text-sm font-semibold text-gray-700"
+												>
+													Payment Notes (Optional)
+												</Label>
+												<Textarea
+													id="notes"
+													placeholder="Any additional information about the payment..."
+													className="min-h-20 rounded-xl border-2 border-gray-200 focus:border-emerald-500"
+													value={formData.notes}
+													onChange={(e) =>
+														setFormData({ ...formData, notes: e.target.value })
+													}
+												/>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							</div>
+						</div>
+
+						{/* Sidebar */}
+						<div className="xl:col-span-1 space-y-8">
+							{/* Payment Summary */}
+							<div
+								className="animate-in fade-in slide-in-from-right-4 duration-700 delay-600"
+								style={{ animationFillMode: "forwards" }}
+							>
+								<Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm sticky top-8">
+									<CardHeader>
+										<CardTitle className="text-xl font-bold text-gray-900">
+											Payment Summary
+										</CardTitle>
+										<CardDescription>Final payment breakdown</CardDescription>
+									</CardHeader>
+									<CardContent className="space-y-4">
+										<div className="space-y-3">
+											<div className="flex justify-between items-center">
+												<span className="text-sm text-gray-600">
+													First Month Rent:
+												</span>
+												<span className="font-semibold">
+													{unit.monthlyRent.toLocaleString()} ETB
+												</span>
+											</div>
+
+											<div className="flex justify-between items-center">
+												<span className="text-sm text-gray-600">
+													Security Deposit:
+												</span>
+												<span className="font-semibold">
+													{unit.deposit.toLocaleString()} ETB
+												</span>
+											</div>
+
+											<div className="border-t pt-3">
+												<div className="flex justify-between items-center">
+													<span className="text-lg font-bold text-gray-900">
+														Total Amount:
+													</span>
+													<span className="text-2xl font-bold text-emerald-600">
+														{totalAmount.toLocaleString()} ETB
+													</span>
+												</div>
+											</div>
+										</div>
+
+										<div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+											<h4 className="font-semibold text-emerald-800 mb-2">
+												✓ Lease Agreement Signed
+											</h4>
+											<p className="text-emerald-700 text-sm">
+												Your digital lease agreement has been successfully
+												signed and is now active.
+											</p>
+										</div>
+
+										<div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+											<h4 className="font-semibold text-yellow-800 mb-2">
+												Payment Verification
+											</h4>
+											<ul className="text-yellow-700 text-sm space-y-1">
+												<li>• Payment verification: 1-24 hours</li>
+												<li>• SMS confirmation upon verification</li>
+												<li>• Key collection details will be sent</li>
+												<li>• Move-in inspection scheduled</li>
+											</ul>
+										</div>
+									</CardContent>
+								</Card>
+							</div>
+						</div>
+					</div>
+
+					{/* Submit Button */}
+					<div
+						className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-1200"
+						style={{ animationFillMode: "forwards" }}
+					>
+						<div className="flex justify-end space-x-4 mt-8">
+							<Button
+								type="button"
+								variant="outline"
+								asChild
+								className="border-gray-300 hover:bg-gray-50"
+							>
+								<Link
+									href={`/dashboard/tenant/properties/${params.id}/units/${params.unitId}/lease`}
+								>
+									Back to Lease
+								</Link>
+							</Button>
+							<Button
+								type="submit"
+								className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg transform hover:scale-105 transition-all duration-300"
+								disabled={isLoading}
+							>
+								{isLoading ? (
+									<div className="flex items-center space-x-3">
+										<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+										<span>Processing Payment...</span>
+									</div>
+								) : (
+									<div className="flex items-center space-x-3">
+										<CreditCard className="h-5 w-5" />
+										<span>Submit Payment</span>
+									</div>
+								)}
+							</Button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</DashboardLayout>
+	);
 }

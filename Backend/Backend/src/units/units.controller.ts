@@ -20,8 +20,8 @@ import { Role } from 'src/shared/enums/role.enum';
 import { Request } from 'express';
 
 @Controller('properties/:propertyId/units')
-//@UseGuards(JwtAuthGuard, RolesGuard)
-//@Roles(Role.ADMIN, Role.OWNER)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.OWNER, Role.TENANT)
 export class UnitsController {
   constructor(private readonly unitsService: UnitsService) {}
 

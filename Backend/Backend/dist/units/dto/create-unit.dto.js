@@ -18,6 +18,7 @@ class CreateUnitDto {
     bedrooms;
     bathrooms;
     monthlyRent;
+    securityDeposit = 60000;
     status;
     description;
     images;
@@ -53,6 +54,12 @@ __decorate([
     (0, class_validator_1.IsPositive)(),
     __metadata("design:type", Number)
 ], CreateUnitDto.prototype, "monthlyRent", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsPositive)(),
+    __metadata("design:type", Number)
+], CreateUnitDto.prototype, "securityDeposit", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsIn)(['vacant', 'occupied', 'maintenance']),

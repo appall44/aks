@@ -188,6 +188,30 @@ let TenantService = class TenantService {
         ]);
         return { profile, payments, maintenance, amenities, landlord };
     }
+    async getRentalInfo(tenantId) {
+        const tenant = await this.tenantRepo.findOne({
+            where: { id: Number(tenantId) },
+            relations: ['leases', 'leases.unit', 'leases.unit.property'],
+        });
+        if (!tenant) {
+            throw new common_1.NotFoundException('Tenant not found');
+        }
+        const activeLease = tenant.leases?.[0];
+        if (!activeLease || !activeLease.unit) {
+            return {};
+        }
+        return {
+            property: {
+                name: activeLease.unit.property?.name || null,
+            },
+            unit: activeLease.unit.unitNumber || null,
+            leaseStart: activeLease.startDate || null,
+            leaseEnd: activeLease.endDate || null,
+            monthlyRent: activeLease.unit.monthlyRent || null,
+            deposit: activeLease.unit.deposit || null,
+            status: activeLease.status || null,
+        };
+    }
 };
 exports.TenantService = TenantService;
 exports.TenantService = TenantService = __decorate([

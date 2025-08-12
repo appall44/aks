@@ -10,6 +10,8 @@ export class UnitsService {
   constructor(
     @InjectRepository(Unit)
     private readonly unitRepo: Repository<Unit>,
+     @InjectRepository(Unit)
+    private unitRepository: Repository<Unit>,
   ) {}
 
   async createUnit(propertyId: number, dto: CreateUnitDto): Promise<Unit> {
@@ -46,5 +48,18 @@ export class UnitsService {
 
   async deleteUnit(id: number): Promise<void> {
     await this.unitRepo.delete(id);
+  }
+
+  async findById(id: number): Promise<Unit | null> {
+    return this.unitRepository.findOne({ where: { id } });
+  }
+
+  async updateUnitStatus(id: number, status: string): Promise<Unit> {
+    const unit = await this.unitRepository.findOne({ where: { id } });
+    if (!unit) {
+      throw new NotFoundException(`Unit with id ${id} not found`);
+    }
+    unit.status = status;
+    return this.unitRepository.save(unit);
   }
 }

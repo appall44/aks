@@ -8,9 +8,8 @@ import { Property } from '../properties/entities/property.entity';
 import { Unit } from '../units/entities/unit.entity';
 import { UpdateLeaseDto } from './dto/update-lease.dto';
 import { User } from '../iam/users/entities/user.entity';
-import { SignLeaseDto } from './dto/create-lease.dto';
-
-
+import { SignLeaseDto } from './dto/sign-lease.dto';
+import {CreateLeaseDto} from './dto/create-lease.dto'
 @Injectable()
 export class LeaseService {
   constructor(
@@ -27,30 +26,120 @@ export class LeaseService {
     private unitRepository: Repository<Unit>,
   ) {}
 
+async createLease(leaseData: Partial<CreateLeaseDto>, user: User) {
+  const tenantId = leaseData.tenantId || user.id;
+
+  let lease = await this.leaseRepository.findOne({
+    where: {
+      propertyId: leaseData.propertyId,
+      unitId: leaseData.unitId,
+      tenantId: tenantId,
+    },
+  });
+
+  if (!lease) {
+    lease = new Lease();
+
+    lease.tenantId = tenantId;
+    lease.propertyId = leaseData.propertyId!;
+    lease.unitId = leaseData.unitId!;
+
+    // userId no longer used; remove this line:
+    // lease.userId = user.id;
+
+    if (!leaseData.startDate) {
+      throw new Error('startDate is required');
+    }
+    if (!leaseData.endDate) {
+      throw new Error('endDate is required');
+    }
+
+    lease.startDate = new Date(leaseData.startDate);
+    lease.endDate = new Date(leaseData.endDate);
+    lease.rentAmount = leaseData.rentAmount!;
+    lease.status = leaseData.status || 'active';
+
+    if (leaseData.digitalSignature) {
+      lease.digitalSignature = leaseData.digitalSignature;
+    }
+  } else {
+    if (leaseData.digitalSignature !== undefined) {
+      lease.digitalSignature = leaseData.digitalSignature;
+    }
+    if (leaseData.status !== undefined) {
+      lease.status = leaseData.status;
+    }
+    if (leaseData.startDate) {
+      lease.startDate = new Date(leaseData.startDate);
+    }
+    if (leaseData.endDate) {
+      lease.endDate = new Date(leaseData.endDate);
+    }
+    if (leaseData.rentAmount !== undefined) {
+      lease.rentAmount = leaseData.rentAmount;
+    }
+  }
+
+  await this.leaseRepository.save(lease);
+
+  return lease;
+}
 
 
   async findAllLeases(): Promise<Lease[]> {
     return this.leaseRepository.find({ relations: ['tenant', 'user', 'property', 'unit'] });
   }
 
-  async findLeaseById(id: number): Promise<Lease> {
-    const lease = await this.leaseRepository.findOne({ where: { id }, relations: ['tenant', 'user', 'property', 'unit'] });
-    if (!lease) throw new NotFoundException(`Lease with ID ${id} not found`);
-    return lease;
+
+async updateLease(id: string, updateData: Partial<Lease>): Promise<Lease> {
+  const lease = await this.leaseRepository.findOneBy({ id });
+  if (!lease) {
+    throw new NotFoundException(`Lease with id ${id} not found`);
   }
 
-  async updateLease(id: number, updateData: UpdateLeaseDto): Promise<Lease> {
-    const lease = await this.findLeaseById(id);
+  // Exclude id from updateData if accidentally included
+  const { id: _, ...fieldsToUpdate } = updateData;
 
-    if (updateData.startDate) lease.startDate = new Date(updateData.startDate);
-    if (updateData.endDate) lease.endDate = new Date(updateData.endDate);
-    if (updateData.rentAmount !== undefined) lease.rentAmount = updateData.rentAmount;
+  Object.assign(lease, fieldsToUpdate);
 
-    // Update other fields as needed
+  return this.leaseRepository.save(lease);
+}
 
-    await this.leaseRepository.save(lease);
-    return lease;
-  }
+
+async findByPropertyAndUnit(propertyId: number, unitId: number) {
+  return this.leaseRepository.findOne({
+    where: {
+      propertyId,
+      unitId,
+    },
+    relations: ['tenant', 'property', 'unit'],  
+  });
+}
+
+async findLeaseById(id: string): Promise<Lease> {
+  const lease = await this.leaseRepository.findOne({
+    where: { id },
+    relations: ['tenant', 'user', 'property', 'unit'],
+  });
+  if (!lease) throw new NotFoundException(`Lease with ID ${id} not found`);
+  return lease;
+}
+
+
+  // Uncomment and modify if you want to allow updates
+  // async updateLease(id: number, updateData: UpdateLeaseDto): Promise<Lease> {
+  //   const lease = await this.findLeaseById(id);
+  //
+  //   if (updateData.startDate) lease.startDate = new Date(updateData.startDate);
+  //   if (updateData.endDate) lease.endDate = new Date(updateData.endDate);
+  //   if (updateData.rentAmount !== undefined) lease.rentAmount = updateData.rentAmount;
+  //   if (updateData.status) lease.status = updateData.status;
+  //   if (updateData.paymentMethod !== undefined) lease.paymentMethod = updateData.paymentMethod;
+  //   if (updateData.digitalSignature !== undefined) lease.digitalSignature = updateData.digitalSignature;
+  //
+  //   await this.leaseRepository.save(lease);
+  //   return lease;
+  // }
 
   async deleteLease(id: number): Promise<void> {
     const result = await this.leaseRepository.delete(id);
@@ -59,11 +148,8 @@ export class LeaseService {
 
   async findLeaseByPropertyAndUnit(propertyId: number, unitId: number): Promise<Lease> {
     const lease = await this.leaseRepository.findOne({
-      where: {
-        property: { id: propertyId },
-        unit: { id: unitId }
-      },
-      relations: ['property', 'unit', 'tenant'],
+      where: { propertyId, unitId },
+      relations: ['property', 'unit', 'tenant', 'user'],
     });
     if (!lease) throw new NotFoundException(`Lease not found for property ${propertyId} and unit ${unitId}`);
     return lease;
@@ -72,38 +158,14 @@ export class LeaseService {
   async findLeasesByOwner(ownerId: number): Promise<Lease[]> {
     return this.leaseRepository.find({
       where: { property: { owner: { id: ownerId } } },
-      relations: ['tenant', 'property', 'unit'],
+      relations: ['tenant', 'property', 'unit', 'user'],
     });
   }
 
-  async findLeasesByTenant(tenantId: number) {
+  async findLeasesByTenant(tenantId: number): Promise<Lease[]> {
     return this.leaseRepository.find({
-      where: { tenant: { id: tenantId } },
-      relations: ['tenant', 'property', 'unit'],
+      where: { tenantId },
+      relations: ['tenant', 'property', 'unit', 'user'],
     });
   }
-
-  async signLease(leaseData: Partial<Lease>, user: User) {
-  // Find lease by property, unit, and tenant (user.id)
-  let lease = await this.leaseRepository.findOne({
-    where: {
-      property: { id: leaseData.propertyId },
-      unit: { id: leaseData.unitId },
-      tenant: { id: user.id },
-    },
-  });
-
-  if (!lease) {
-    // Optionally throw or create a new lease
-    throw new NotFoundException('Lease not found for signing');
-  }
-
-  lease.paymentMethod = leaseData.paymentMethod;
-  lease.digitalSignature = leaseData.digitalSignature;
-
-  await this.leaseRepository.save(lease);
-
-  return lease;
-}
-
 }

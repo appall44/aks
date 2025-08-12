@@ -1,9 +1,12 @@
-// create-payment.dto.ts
-import { IsUUID, IsNumber, IsString, IsOptional, IsDateString, IsIn } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsDateString, IsIn } from 'class-validator';
 
 export class CreatePaymentDto {
- @IsNumber()
-  tenantId: number;  
+  @IsNumber()
+  tenantId: number;
+
+  @IsOptional()
+    @IsString()
+  leaseId?: string;  
 
   @IsNumber()
   amount: number;
@@ -36,4 +39,10 @@ export class CreatePaymentDto {
 
   @IsDateString()
   date: string;
+
+  @IsNumber()
+  propertyId: number;
+
+  @IsNumber()
+  unitId: number;
 }

@@ -5,11 +5,13 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { Property } from 'src/properties/entities/property.entity';
 import { Lease } from 'src/leases/lease.entity';
 
 @Entity()
+@Unique(['unitNumber', 'property'])
 export class Unit {
   @PrimaryGeneratedColumn()
   id: number;
@@ -32,6 +34,9 @@ export class Unit {
   @Column({ nullable: true })
   monthlyRent: number;
 
+  @Column({ nullable: true, default: 60000 })
+  deposit: number;
+
   @Column({ nullable: true })
   status: string;
 
@@ -49,4 +54,8 @@ export class Unit {
 
   @OneToMany(() => Lease, (lease) => lease.unit)
   leases: Lease[];
+
+    @Column({ type: 'date', nullable: false, default: () => 'CURRENT_DATE' })
+  availableFrom: string;
+
 }

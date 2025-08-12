@@ -11,7 +11,7 @@ export declare class PaymentsService {
     createPayment(dto: CreatePaymentDto): Promise<Payment>;
     deletePayment(id: string): Promise<void>;
     getPaymentById(id: string): Promise<Payment>;
-    getPaymentsByTenant(tenantId: string): Promise<Payment[]>;
+    getPaymentsByTenant(tenantId: number): Promise<Payment[]>;
     getPaymentsByLease(leaseId: string): Promise<Payment[]>;
     getAllPayments(): Promise<Payment[]>;
 }

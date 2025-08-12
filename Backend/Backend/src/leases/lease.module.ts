@@ -6,10 +6,13 @@ import { Property } from '../properties/entities/property.entity';
 import { Unit } from '../units/entities/unit.entity';
 import { LeaseService } from './lease.service';
 import { LeaseController } from './lease.controller';
+import { UnitsModule } from '../units/units.module';  
+
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Lease, Tenant, Property, Unit]), 
+    UnitsModule,
   ],
   providers: [LeaseService],
   controllers: [LeaseController],

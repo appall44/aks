@@ -33,6 +33,11 @@ export class CreateUnitDto {
   @IsPositive()
   monthlyRent: number;
 
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  securityDeposit?: number = 60000;
+
   @IsString()
   @IsIn(['vacant', 'occupied', 'maintenance'])
   status: string;

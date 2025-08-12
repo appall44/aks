@@ -211,4 +211,36 @@ async getLandlordByTenantId(tenantId: number): Promise<Landlord> {
 
     return { profile, payments, maintenance, amenities, landlord };
   }
+
+async getRentalInfo(tenantId: number) {
+  const tenant = await this.tenantRepo.findOne({
+    where: { id: Number(tenantId) },
+    relations: ['leases', 'leases.unit', 'leases.unit.property'],
+  });
+
+  if (!tenant) {
+    throw new NotFoundException('Tenant not found');
+  }
+
+  const activeLease = tenant.leases?.[0]; // safe access
+
+  // If no lease found, return empty object (frontend will show "No rental information available")
+  if (!activeLease || !activeLease.unit) {
+    return {};
+  }
+
+  return {
+    property: {
+      name: activeLease.unit.property?.name || null,
+    },
+    unit: activeLease.unit.unitNumber || null,
+    leaseStart: activeLease.startDate || null,
+    leaseEnd: activeLease.endDate || null,
+    monthlyRent: activeLease.unit.monthlyRent || null,
+    deposit: activeLease.unit.deposit || null,
+    status: activeLease.status || null,
+  };
+}
+
+
 }

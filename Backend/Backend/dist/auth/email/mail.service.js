@@ -75,6 +75,46 @@ let MailService = MailService_1 = class MailService {
             throw error;
         }
     }
+    async sendLoginAlertEmail(to, role, ipAddress) {
+        const loginTime = new Date().toLocaleString();
+        const year = new Date().getFullYear();
+        const mailOptions = {
+            from: `"Akeray Property Management System" <${process.env.GMAIL_USER}>`,
+            to,
+            subject: `Login Alert - ${role} Account`,
+            text: `Your ${role} account logged in on ${loginTime}. IP: ${ipAddress || 'Unknown'}`,
+            html: `
+      <div style="font-family: 'Segoe UI', sans-serif; max-width: 700px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background: linear-gradient(to right, #007cf0, #00dfd8); color: white; padding: 30px; text-align: center;">
+          <h2>Akeray Property Management System</h2>
+        </div>
+
+        <div style="padding: 30px; background-color: #ffffff;">
+          <p>Dear ${role},</p>
+          <p>This is a security alert. Your <strong>${role}</strong> account was logged in on:</p>
+          <p><strong>${loginTime}</strong></p>
+          <p>IP Address: ${ipAddress || 'Unknown'}</p>
+
+          <p>If this was you, no action is needed. If not, please change your password immediately.</p>
+
+          <p style="margin-top: 30px;">Best regards,<br>The Akeray Team</p>
+        </div>
+
+        <div style="background: linear-gradient(to right, #007cf0, #00dfd8); color: white; text-align: center; padding: 12px; font-size: 12px;">
+          &copy; ${year} Akeray Property Management System
+        </div>
+      </div>
+      `,
+        };
+        try {
+            await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Login alert email sent to ${to}`);
+        }
+        catch (error) {
+            this.logger.error(`Failed to send login alert email to ${to}`, error);
+            throw error;
+        }
+    }
 };
 exports.MailService = MailService;
 exports.MailService = MailService = MailService_1 = __decorate([

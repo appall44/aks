@@ -84,6 +84,13 @@ let TenantController = class TenantController {
             throw new common_1.NotFoundException('Landlord info not found');
         return landlord;
     }
+    async getRentalInfo(tenantId) {
+        const id = Number(tenantId);
+        if (isNaN(id)) {
+            throw new common_1.BadRequestException('Invalid tenant ID');
+        }
+        return this.tenantService.getRentalInfo(id);
+    }
 };
 exports.TenantController = TenantController;
 __decorate([
@@ -183,6 +190,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TenantController.prototype, "getLandlordInfo", null);
+__decorate([
+    (0, common_1.Get)('/tenant/:tenantId/rental-info'),
+    __param(0, (0, common_1.Param)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TenantController.prototype, "getRentalInfo", null);
 exports.TenantController = TenantController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [tenant_service_1.TenantService])

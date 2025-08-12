@@ -17,6 +17,7 @@ const roles_guard_1 = require("./guards/roles.guard");
 const admin_module_1 = require("../admin/admin.module");
 const owner_module_1 = require("../owner/owner.module");
 const tenant_module_1 = require("../tenant/tenant.module");
+const mail_module_1 = require("./email/mail.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -28,6 +29,7 @@ exports.AuthModule = AuthModule = __decorate([
             (0, common_1.forwardRef)(() => admin_module_1.AdminModule),
             (0, common_1.forwardRef)(() => owner_module_1.OwnerModule),
             (0, common_1.forwardRef)(() => tenant_module_1.TenantModule),
+            mail_module_1.MailModule,
         ],
         controllers: [auth_controller_1.AuthController],
         providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, roles_guard_1.RolesGuard],

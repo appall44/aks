@@ -9,21 +9,63 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SignLeaseDto = void 0;
+exports.CreateLeaseDto = void 0;
 const class_validator_1 = require("class-validator");
-class SignLeaseDto {
-    paymentMethod;
+class CreateLeaseDto {
+    leaseId;
+    startDate;
+    endDate;
+    rentAmount;
+    status;
     digitalSignature;
+    tenantId;
+    propertyId;
+    unitId;
 }
-exports.SignLeaseDto = SignLeaseDto;
+exports.CreateLeaseDto = CreateLeaseDto;
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateLeaseDto.prototype, "leaseId", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], SignLeaseDto.prototype, "paymentMethod", void 0);
+], CreateLeaseDto.prototype, "startDate", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsDateString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], SignLeaseDto.prototype, "digitalSignature", void 0);
+], CreateLeaseDto.prototype, "endDate", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], CreateLeaseDto.prototype, "rentAmount", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(['active', 'pending', 'terminated', 'expired', 'expiring']),
+    __metadata("design:type", String)
+], CreateLeaseDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateLeaseDto.prototype, "digitalSignature", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], CreateLeaseDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], CreateLeaseDto.prototype, "propertyId", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], CreateLeaseDto.prototype, "unitId", void 0);
 //# sourceMappingURL=create-lease.dto.js.map

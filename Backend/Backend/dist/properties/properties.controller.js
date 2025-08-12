@@ -132,7 +132,6 @@ __decorate([
 ], PropertiesController.prototype, "getAvailableProperties", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.OWNER, role_enum_1.Role.ADMIN),
     (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 10, {
         storage: (0, multer_1.diskStorage)({
@@ -152,7 +151,6 @@ __decorate([
 ], PropertiesController.prototype, "createProperty", null);
 __decorate([
     (0, common_1.Get)('dashboard'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.OWNER, role_enum_1.Role.ADMIN),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -229,7 +227,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PropertiesController.prototype, "getPropertiesWithAvailableUnits", null);
 exports.PropertiesController = PropertiesController = __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.OWNER, role_enum_1.Role.ADMIN, role_enum_1.Role.TENANT),
     (0, common_1.Controller)('properties'),
     __metadata("design:paramtypes", [properties_service_1.OwnerPropertiesService,

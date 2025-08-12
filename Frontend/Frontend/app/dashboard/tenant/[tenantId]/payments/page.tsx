@@ -20,17 +20,26 @@ import DashboardLayout from "@/components/dashboard-layout"
 import Link from "next/link"  
 import { useRouter, useParams } from "next/navigation"; 
 
-interface Payment {
-  id: string
-  month: string
-  amount: number
-  dueDate: string
-  paidDate: string | null
-  status: "paid" | "due" | "overdue" | "partial"
-  method: string | null
-  property: string
-  unit: string
+interface Unit {
+  id: string;
+  unitNumber: string;
+  monthlyRent: number;
 }
+
+interface Payment {
+  id: string;
+  month: string;
+  amount: number;
+  dueDate: string;
+  paidDate: string | null;
+   endDate: string | null;
+  status: 'paid' | 'due' | 'overdue' | 'partial';
+  paymentMethod: string | null;
+  property: string;
+  unit: Unit;
+  notes:string;
+}
+
 
 export default function TenantPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
@@ -82,21 +91,24 @@ function getMethodLabel(method: string | null) {
   }
 }
 
-  useEffect(() => {
-    async function fetchPayments() {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await axios.get<Payment[]>(`http://localhost:5000/tenant/${tenantId}/payments`)
-        setPayments(res.data)
-      } catch (err: any) {
-        setError(err.response?.data?.message || err.message || "Failed to fetch payments")
-      } finally {
-        setLoading(false)
-      }
+ useEffect(() => {
+  async function fetchPayments() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await axios.get<Payment[]>(`http://localhost:5000/${tenantId}/payments`)
+      setPayments(res.data)
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Failed to fetch payments")
+    } finally {
+      setLoading(false)
     }
+  }
+  if (tenantId) {
     fetchPayments()
-  }, [tenantId])
+  }
+}, [tenantId])
+
 
   if (loading) return <p>Loading payments...</p>
   if (error) return <p className="text-red-600">Error: {error}</p>
@@ -107,7 +119,9 @@ const filteredPayments = payments.filter((payment) => {
   const month = payment.month ? payment.month.toLowerCase() : "";
   const id = payment.id ? payment.id.toLowerCase() : "";
   const property = payment.property ? payment.property.toLowerCase() : "";
-  const unit = payment.unit ? payment.unit.toLowerCase() : "";
+  const unit = payment.unit?.unitNumber ? payment.unit.unitNumber.toLowerCase() : "";
+const monthlyRent = payment.unit?.monthlyRent ?? 0;  
+
 
   const matchesSearch =
     month.includes(searchLower) ||
@@ -120,6 +134,9 @@ const filteredPayments = payments.filter((payment) => {
   return matchesSearch && matchesStatus;
 });
 
+function renderMonthlyRent(payment: Payment) {
+  return payment.unit?.monthlyRent || payment.amount || 0;
+}
 
   // Sum totals
   const totalPaid = filteredPayments
@@ -180,7 +197,13 @@ const filteredPayments = payments.filter((payment) => {
                   <div className="space-y-3">
                     <p className="text-sm font-semibold text-gray-600">Amount Due</p>
                     <p className="text-3xl font-bold text-gray-900">{(dueAmount / 1000).toFixed(0)} ETB</p>
-                    <p className="text-sm text-yellow-600 font-medium">Due January 1, 2025</p>
+{filteredPayments.length > 0 && filteredPayments[0].endDate && (
+  <p className="text-sm text-yellow-600 font-medium">
+    Due {new Date(filteredPayments[0].endDate).toLocaleDateString()}
+  </p>
+)}
+
+
                   </div>
                   <div className="p-4 rounded-3xl bg-yellow-50 group-hover:scale-125 transition-transform duration-500 shadow-lg">
                     <Clock className="h-8 w-8 text-yellow-600" />
@@ -195,7 +218,10 @@ const filteredPayments = payments.filter((payment) => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
                     <p className="text-sm font-semibold text-gray-600">Monthly Rent</p>
-                    <p className="text-3xl font-bold text-gray-900">18 ETB</p>
+                  <p className="text-3xl font-bold text-gray-900">
+  {payments.length > 0 ? payments[0].unit?.monthlyRent : 'No payments'}
+</p>
+
 <p className="text-sm text-blue-600 font-medium">{propertyName}</p>
                   </div>
                   <div className="p-4 rounded-3xl bg-blue-50 group-hover:scale-125 transition-transform duration-500 shadow-lg">
@@ -252,11 +278,11 @@ const filteredPayments = payments.filter((payment) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Payment ID</TableHead>
-                    <TableHead>Month</TableHead>
+                    <TableHead>Description</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Due Date</TableHead>
                     <TableHead>Paid Date</TableHead>
-                    <TableHead>Method</TableHead>
+                    <TableHead>Payment Method</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -270,7 +296,7 @@ const filteredPayments = payments.filter((payment) => {
                           <span className="font-mono text-sm font-medium">{payment.id}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-medium">{payment.month}</span>
+                          <span className="font-medium">{payment.notes}</span>
                         </TableCell>
                         <TableCell>
                           <span className="font-semibold">{payment.amount.toLocaleString()} ETB</span>
@@ -292,7 +318,7 @@ const filteredPayments = payments.filter((payment) => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">{getMethodLabel(payment.method)}</span>
+                          <span className="text-sm">{getMethodLabel(payment.paymentMethod)}</span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">

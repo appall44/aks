@@ -8,9 +8,11 @@ export declare class Unit {
     bedrooms: number;
     bathrooms: number;
     monthlyRent: number;
+    deposit: number;
     status: string;
     description: string;
     images: string[];
     property: Property;
     leases: Lease[];
+    availableFrom: string;
 }

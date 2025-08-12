@@ -54,6 +54,7 @@ type Unit = {
 };
 
 type Lease = {
+	id:string
   startDate: string;
   endDate: string;
   duration: string;
@@ -100,6 +101,7 @@ export default function OnlineLeaseAgreementPage() {
     deposit: number;
   } | null>(null);
   const [lease, setLease] = useState<{
+	id:string
     startDate: string;
     endDate: string;
     duration: string;
@@ -110,7 +112,6 @@ export default function OnlineLeaseAgreementPage() {
 
   const [formData, setFormData] = useState({
     agreeToTerms: false,
-    paymentMethod: "cash",
     digitalSignature: "",
     confirmDetails: false,
 	 startDate: '',   
@@ -140,7 +141,7 @@ useEffect(() => {
     const unitRes = await axios.get<Unit>(`http://localhost:5000/properties/${params.id}/units/${params.unitId}`, config);
     console.log("Unit fetched", unitRes.data);
 
-    const leaseRes = await axios.get<Lease>(`http://localhost:5000/leases/property/${params.id}/unit/${params.unitId}`, config);
+  const leaseRes = await axios.get<Lease>(`http://localhost:5000/properties/${params.id}/units/${params.unitId}/lease`, config);
     console.log("Lease fetched", leaseRes.data);
 
     setProperty(propertyRes.data);
@@ -181,7 +182,6 @@ const { name, value, type, checked } = target;
 
     if (
       !formData.agreeToTerms ||
-      !formData.paymentMethod ||
       !formData.digitalSignature.trim() ||
       !formData.confirmDetails
     ) {
@@ -191,13 +191,12 @@ const { name, value, type, checked } = target;
     }
 
     try {
-      // Replace this with your real API endpoint and data shape
-const token = localStorage.getItem('accessToken'); // or wherever you store your JWT
+     
+const token = localStorage.getItem('accessToken'); 
 
 await axios.post(
-  `http://localhost:5000/leases/property/${params.id}/unit/${params.unitId}/lease/sign`,
+  `http://localhost:5000/properties/${params.id}/units/${params.unitId}/lease/sign`,
   {
-    paymentMethod: formData.paymentMethod,
     digitalSignature: formData.digitalSignature,
   },
   {
@@ -293,17 +292,19 @@ await axios.post(
 													Unit {unit.unitNumber}
 												</p>
 											</div>
-											<div className="space-y-2">
-												<p className="text-sm font-medium text-gray-500">
-													Lease Period
-												</p>
-												<p className="text-sm font-semibold text-gray-900">
-													{new Date(lease.startDate).toLocaleDateString()}
-												</p>
-												<p className="text-sm text-gray-600">
-													to {new Date(lease.endDate).toLocaleDateString()}
-												</p>
-											</div>
+										<div className="space-y-2">
+  <p className="text-sm font-medium text-gray-500">Lease Period</p>
+  <p className="text-sm font-semibold text-gray-900">
+    {lease?.startDate ? new Date(lease.startDate).toLocaleDateString() : "N/A"}
+  </p>
+  <p className="text-sm text-gray-600">
+    to {lease?.endDate ? new Date(lease.endDate).toLocaleDateString() : "N/A"}
+  </p>
+    <p className="text-sm text-gray-600">
+    Lease Id {lease.id}
+  </p>
+</div>
+
 											<div className="space-y-2">
 												<p className="text-sm font-medium text-gray-500">
 													Monthly Rent
@@ -392,7 +393,7 @@ await axios.post(
 									</CardContent>
 								</Card>
 							</div>
-{/* Payment Method Selection */}
+{/* Payment Method Selection
       <div>
         <label
           htmlFor="paymentMethod"
@@ -418,7 +419,7 @@ await axios.post(
             </option>
           ))}
         </select>
-      </div>
+      </div> */}
 							{/* Digital Signature */}
 							<div
 								className="animate-in fade-in slide-in-from-left-4 duration-700 delay-900"
@@ -535,10 +536,10 @@ await axios.post(
 
 											<div className="border-t pt-3">
 												<div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
-													<span className="text-lg font-bold text-gray-900">
+													<span className="text-sm font-medium text-gray-900">
 														Total Amount:
 													</span>
-													<span className="text-2xl font-bold text-purple-600">
+													<span className="font-semibold text-purple-600">
 														{totalAmount.toLocaleString()} ETB
 													</span>
 												</div>

@@ -45,4 +45,23 @@ export declare class TenantService {
         amenities: Amenity[];
         landlord: Landlord;
     }>;
+    getRentalInfo(tenantId: number): Promise<{
+        property?: undefined;
+        unit?: undefined;
+        leaseStart?: undefined;
+        leaseEnd?: undefined;
+        monthlyRent?: undefined;
+        deposit?: undefined;
+        status?: undefined;
+    } | {
+        property: {
+            name: string | null;
+        };
+        unit: string | null;
+        leaseStart: Date;
+        leaseEnd: Date;
+        monthlyRent: number | null;
+        deposit: number | null;
+        status: import("../leases/lease.entity").LeaseStatus;
+    }>;
 }

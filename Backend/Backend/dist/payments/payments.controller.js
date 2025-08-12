@@ -16,32 +16,36 @@ exports.PaymentsController = void 0;
 const common_1 = require("@nestjs/common");
 const payments_service_1 = require("./payments.service");
 const create_payment_dto_1 = require("./dto/create-payment.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
 let PaymentsController = class PaymentsController {
     paymentsService;
     constructor(paymentsService) {
         this.paymentsService = paymentsService;
     }
-    async createPayment(id, createPaymentDto) {
-        createPaymentDto.tenantId = id;
+    async createPayment(propertyId, unitId, createPaymentDto) {
+        createPaymentDto.propertyId = propertyId;
+        createPaymentDto.unitId = unitId;
         return this.paymentsService.createPayment(createPaymentDto);
     }
     async getPaymentById(paymentId) {
         return this.paymentsService.getPaymentById(paymentId);
     }
+    async getPaymentsByTenant(tenantId) {
+        return this.paymentsService.getPaymentsByTenant(tenantId);
+    }
     async deletePayment(paymentId) {
         return this.paymentsService.deletePayment(paymentId);
-    }
-    async getPaymentsByTenant(tenantId) {
-        return this.paymentsService.getPaymentsByTenant(tenantId.toString());
     }
 };
 exports.PaymentsController = PaymentsController;
 __decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
+    (0, common_1.Post)('properties/:propertyId/units/:unitId/payment'),
+    __param(0, (0, common_1.Param)('propertyId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Param)('unitId', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, create_payment_dto_1.CreatePaymentDto]),
+    __metadata("design:paramtypes", [Number, Number, create_payment_dto_1.CreatePaymentDto]),
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "createPayment", null);
 __decorate([
@@ -52,21 +56,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "getPaymentById", null);
 __decorate([
+    (0, common_1.Get)('/:tenantId/payments'),
+    __param(0, (0, common_1.Param)('tenantId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "getPaymentsByTenant", null);
+__decorate([
     (0, common_1.Delete)(':paymentId'),
     __param(0, (0, common_1.Param)('paymentId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "deletePayment", null);
-__decorate([
-    (0, common_1.Get)(),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
-], PaymentsController.prototype, "getPaymentsByTenant", null);
 exports.PaymentsController = PaymentsController = __decorate([
-    (0, common_1.Controller)('tenant/:id/payments'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.Controller)(),
     __metadata("design:paramtypes", [payments_service_1.PaymentsService])
 ], PaymentsController);
 //# sourceMappingURL=payments.controller.js.map

@@ -18,6 +18,7 @@ let Payment = class Payment {
     tenant;
     lease;
     amount;
+    MonthlyRent;
     paymentMethod;
     status;
     referenceNumber;
@@ -45,6 +46,10 @@ __decorate([
     (0, typeorm_1.Column)('decimal'),
     __metadata("design:type", Number)
 ], Payment.prototype, "amount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', nullable: true }),
+    __metadata("design:type", Number)
+], Payment.prototype, "MonthlyRent", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)

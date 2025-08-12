@@ -367,8 +367,8 @@ const availableUnits = availableUnitsCount;
 										</div>
 										<div className="text-center p-4 rounded-xl bg-blue-50 border border-blue-200">
 											<Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-											<p className="text-2xl font-bold text-blue-600">
-												{property.availableUnits}
+											<p className="text-1xl font-bold text-blue-600">
+												 {availableUnits} unit{availableUnits > 1 ? "s" : ""}
 											</p>
 											<p className="text-sm text-blue-700">Available</p>
 										</div>

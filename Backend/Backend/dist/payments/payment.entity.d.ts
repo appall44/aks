@@ -5,6 +5,7 @@ export declare class Payment {
     tenant: Tenant;
     lease: Lease;
     amount: number;
+    MonthlyRent?: number;
     paymentMethod: string;
     status: 'paid' | 'unpaid';
     referenceNumber?: string;

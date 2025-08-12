@@ -17,6 +17,10 @@ const common_1 = require("@nestjs/common");
 const units_service_1 = require("./units.service");
 const create_unit_dto_1 = require("./dto/create-unit.dto");
 const update_unit_dto_1 = require("./dto/update-unit.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../shared/decorators/roles.decorator");
+const role_enum_1 = require("../shared/enums/role.enum");
 let UnitsController = class UnitsController {
     unitsService;
     constructor(unitsService) {
@@ -82,6 +86,8 @@ __decorate([
 ], UnitsController.prototype, "deleteUnit", null);
 exports.UnitsController = UnitsController = __decorate([
     (0, common_1.Controller)('properties/:propertyId/units'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN, role_enum_1.Role.OWNER, role_enum_1.Role.TENANT),
     __metadata("design:paramtypes", [units_service_1.UnitsService])
 ], UnitsController);
 //# sourceMappingURL=units.controller.js.map

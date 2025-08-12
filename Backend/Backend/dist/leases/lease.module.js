@@ -15,6 +15,7 @@ const property_entity_1 = require("../properties/entities/property.entity");
 const unit_entity_1 = require("../units/entities/unit.entity");
 const lease_service_1 = require("./lease.service");
 const lease_controller_1 = require("./lease.controller");
+const units_module_1 = require("../units/units.module");
 let LeaseModule = class LeaseModule {
 };
 exports.LeaseModule = LeaseModule;
@@ -22,6 +23,7 @@ exports.LeaseModule = LeaseModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([lease_entity_1.Lease, tenant_entity_1.Tenant, property_entity_1.Property, unit_entity_1.Unit]),
+            units_module_1.UnitsModule,
         ],
         providers: [lease_service_1.LeaseService],
         controllers: [lease_controller_1.LeaseController],

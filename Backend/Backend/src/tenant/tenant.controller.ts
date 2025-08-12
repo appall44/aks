@@ -18,8 +18,6 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Role } from 'src/shared/enums/role.enum';
 import { SignupDto } from './dto/create-tenant.dto';
-
-// Import entity classes (not your custom types)
 import { Payment } from '../payments/payment.entity';
 import { MaintenanceRequest } from './maintenance/maintenance.entity';
 import { Amenity } from '../amenity/amenity.entity';
@@ -28,8 +26,6 @@ import { Landlord } from '../landlord/landlord.entity';
 @Controller()
 export class TenantController {
   constructor(private readonly tenantService: TenantService) {}
-
-  // Admin protected routes
 
   @Get('admin/tenant')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -128,4 +124,14 @@ export class TenantController {
     if (!landlord) throw new NotFoundException('Landlord info not found');
     return landlord;
   }
+
+@Get('/tenant/:tenantId/rental-info')
+async getRentalInfo(@Param('tenantId') tenantId: string) {
+  const id = Number(tenantId);
+  if (isNaN(id)) {
+    throw new BadRequestException('Invalid tenant ID');
+  }
+  return this.tenantService.getRentalInfo(id);
+}
+
 }

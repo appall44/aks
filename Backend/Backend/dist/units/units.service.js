@@ -19,8 +19,10 @@ const typeorm_2 = require("typeorm");
 const unit_entity_1 = require("./entities/unit.entity");
 let UnitsService = class UnitsService {
     unitRepo;
-    constructor(unitRepo) {
+    unitRepository;
+    constructor(unitRepo, unitRepository) {
         this.unitRepo = unitRepo;
+        this.unitRepository = unitRepository;
     }
     async createUnit(propertyId, dto) {
         const unit = this.unitRepo.create({
@@ -53,11 +55,24 @@ let UnitsService = class UnitsService {
     async deleteUnit(id) {
         await this.unitRepo.delete(id);
     }
+    async findById(id) {
+        return this.unitRepository.findOne({ where: { id } });
+    }
+    async updateUnitStatus(id, status) {
+        const unit = await this.unitRepository.findOne({ where: { id } });
+        if (!unit) {
+            throw new common_1.NotFoundException(`Unit with id ${id} not found`);
+        }
+        unit.status = status;
+        return this.unitRepository.save(unit);
+    }
 };
 exports.UnitsService = UnitsService;
 exports.UnitsService = UnitsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(unit_entity_1.Unit)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(unit_entity_1.Unit)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UnitsService);
 //# sourceMappingURL=units.service.js.map

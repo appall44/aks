@@ -46,7 +46,7 @@ export class User {
   })
   status: AccountStatus;
 
-  @OneToMany(() => Lease, (lease) => lease.user)
+  @OneToMany(() => Lease, (lease) => lease.tenant)
   leases: Lease[];
 
   @OneToMany(() => Sale, (sale) => sale.buyer)

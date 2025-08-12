@@ -22,6 +22,9 @@ export class Payment {
   @Column('decimal')
   amount: number;
 
+   @Column({ type: 'decimal', nullable: true })
+  MonthlyRent?: number;
+
   @Column()
   paymentMethod: string;
 
@@ -41,7 +44,7 @@ export class Payment {
   paidDate?: Date;
 
   @Column({ nullable: true })
-  month?: string; // e.g. "2025-07"
+  month?: string; 
 
   @CreateDateColumn()
   createdAt: Date;

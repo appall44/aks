@@ -13,6 +13,7 @@ exports.CreatePaymentDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreatePaymentDto {
     tenantId;
+    leaseId;
     amount;
     paymentMethod;
     status;
@@ -22,12 +23,19 @@ class CreatePaymentDto {
     paidDate;
     month;
     date;
+    propertyId;
+    unitId;
 }
 exports.CreatePaymentDto = CreatePaymentDto;
 __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreatePaymentDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreatePaymentDto.prototype, "leaseId", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
@@ -69,4 +77,12 @@ __decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)
 ], CreatePaymentDto.prototype, "date", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreatePaymentDto.prototype, "propertyId", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreatePaymentDto.prototype, "unitId", void 0);
 //# sourceMappingURL=create-payment.dto.js.map

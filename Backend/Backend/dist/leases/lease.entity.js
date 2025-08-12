@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Lease = void 0;
 const typeorm_1 = require("typeorm");
 const tenant_entity_1 = require("../tenant/entities/tenant.entity");
-const user_entity_1 = require("../iam/users/entities/user.entity");
 const payment_entity_1 = require("../payments/payment.entity");
 const property_entity_1 = require("../properties/entities/property.entity");
 const unit_entity_1 = require("../units/entities/unit.entity");
@@ -26,8 +25,6 @@ let Lease = class Lease {
     digitalSignature;
     tenant;
     tenantId;
-    user;
-    userId;
     payments;
     property;
     propertyId;
@@ -36,8 +33,8 @@ let Lease = class Lease {
 };
 exports.Lease = Lease;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)(),
-    __metadata("design:type", Number)
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
 ], Lease.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'date' }),
@@ -77,34 +74,25 @@ __decorate([
     __metadata("design:type", Number)
 ], Lease.prototype, "tenantId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.leases, { nullable: false, onDelete: 'CASCADE' }),
-    (0, typeorm_1.JoinColumn)({ name: 'userId' }),
-    __metadata("design:type", user_entity_1.User)
-], Lease.prototype, "user", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Lease.prototype, "userId", void 0);
-__decorate([
     (0, typeorm_1.OneToMany)(() => payment_entity_1.Payment, (payment) => payment.lease),
     __metadata("design:type", Array)
 ], Lease.prototype, "payments", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => property_entity_1.Property, (property) => property.leases),
+    (0, typeorm_1.ManyToOne)(() => property_entity_1.Property, (property) => property.leases, { nullable: false }),
     (0, typeorm_1.JoinColumn)({ name: 'propertyId' }),
     __metadata("design:type", property_entity_1.Property)
 ], Lease.prototype, "property", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], Lease.prototype, "propertyId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => unit_entity_1.Unit, (unit) => unit.leases),
+    (0, typeorm_1.ManyToOne)(() => unit_entity_1.Unit, (unit) => unit.leases, { nullable: false }),
     (0, typeorm_1.JoinColumn)({ name: 'unitId' }),
     __metadata("design:type", unit_entity_1.Unit)
 ], Lease.prototype, "unit", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], Lease.prototype, "unitId", void 0);
 exports.Lease = Lease = __decorate([

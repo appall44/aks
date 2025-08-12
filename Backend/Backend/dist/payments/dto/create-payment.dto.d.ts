@@ -1,5 +1,6 @@
 export declare class CreatePaymentDto {
     tenantId: number;
+    leaseId?: string;
     amount: number;
     paymentMethod: string;
     status: 'paid' | 'unpaid';
@@ -9,4 +10,6 @@ export declare class CreatePaymentDto {
     paidDate?: string;
     month?: string;
     date: string;
+    propertyId: number;
+    unitId: number;
 }

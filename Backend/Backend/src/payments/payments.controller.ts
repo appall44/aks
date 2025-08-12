@@ -4,50 +4,47 @@ import {
   Body,
   Param,
   Get,
-  Patch,
   Delete,
   ParseIntPipe,
+  UseGuards,
+  BadRequestException
 } from '@nestjs/common';
 
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
-@Controller('tenant/:id/payments')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller()
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-@Post()
-async createPayment(
-  @Param('id', ParseIntPipe) id: number, // <- this is the tenantId from route
-  @Body() createPaymentDto: CreatePaymentDto,
-) {
-  createPaymentDto.tenantId = id;
-  return this.paymentsService.createPayment(createPaymentDto);
-}
+  @Post('properties/:propertyId/units/:unitId/payment')
+  async createPayment(
+    @Param('propertyId', ParseIntPipe) propertyId: number,
+    @Param('unitId', ParseIntPipe) unitId: number,
+    @Body() createPaymentDto: CreatePaymentDto,
+  ) {
+    createPaymentDto.propertyId = propertyId;
+    createPaymentDto.unitId = unitId;
 
+    return this.paymentsService.createPayment(createPaymentDto);
+  }
 
   @Get(':paymentId')
   async getPaymentById(@Param('paymentId') paymentId: string) {
     return this.paymentsService.getPaymentById(paymentId);
   }
-
-  // @Patch(':paymentId')
-  // async updatePayment(
-  //   @Param('paymentId') paymentId: string,
-  //   @Body() updatePaymentDto: UpdatePaymentDto,
-  // ) {
-  //   return this.paymentsService.updatePayment(paymentId, updatePaymentDto);
-  // }
+  @Get('/:tenantId/payments')
+  async getPaymentsByTenant(
+    @Param('tenantId', ParseIntPipe) tenantId: number,
+  ) {
+    return this.paymentsService.getPaymentsByTenant(tenantId);
+  }
 
   @Delete(':paymentId')
   async deletePayment(@Param('paymentId') paymentId: string) {
     return this.paymentsService.deletePayment(paymentId);
   }
-
-  @Get()
-async getPaymentsByTenant(@Param('id', ParseIntPipe) tenantId: number) {
-  return this.paymentsService.getPaymentsByTenant(tenantId.toString());
-}
-
 }

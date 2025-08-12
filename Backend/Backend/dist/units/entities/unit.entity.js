@@ -21,11 +21,13 @@ let Unit = class Unit {
     bedrooms;
     bathrooms;
     monthlyRent;
+    deposit;
     status;
     description;
     images;
     property;
     leases;
+    availableFrom;
 };
 exports.Unit = Unit;
 __decorate([
@@ -57,6 +59,10 @@ __decorate([
     __metadata("design:type", Number)
 ], Unit.prototype, "monthlyRent", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true, default: 60000 }),
+    __metadata("design:type", Number)
+], Unit.prototype, "deposit", void 0);
+__decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Unit.prototype, "status", void 0);
@@ -79,7 +85,12 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => lease_entity_1.Lease, (lease) => lease.unit),
     __metadata("design:type", Array)
 ], Unit.prototype, "leases", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'date', nullable: false, default: () => 'CURRENT_DATE' }),
+    __metadata("design:type", String)
+], Unit.prototype, "availableFrom", void 0);
 exports.Unit = Unit = __decorate([
-    (0, typeorm_1.Entity)()
+    (0, typeorm_1.Entity)(),
+    (0, typeorm_1.Unique)(['unitNumber', 'property'])
 ], Unit);
 //# sourceMappingURL=unit.entity.js.map

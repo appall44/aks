@@ -31,24 +31,82 @@ let LeaseService = class LeaseService {
         this.propertyRepository = propertyRepository;
         this.unitRepository = unitRepository;
     }
+    async createLease(leaseData, user) {
+        const tenantId = leaseData.tenantId || user.id;
+        let lease = await this.leaseRepository.findOne({
+            where: {
+                propertyId: leaseData.propertyId,
+                unitId: leaseData.unitId,
+                tenantId: tenantId,
+            },
+        });
+        if (!lease) {
+            lease = new lease_entity_1.Lease();
+            lease.tenantId = tenantId;
+            lease.propertyId = leaseData.propertyId;
+            lease.unitId = leaseData.unitId;
+            if (!leaseData.startDate) {
+                throw new Error('startDate is required');
+            }
+            if (!leaseData.endDate) {
+                throw new Error('endDate is required');
+            }
+            lease.startDate = new Date(leaseData.startDate);
+            lease.endDate = new Date(leaseData.endDate);
+            lease.rentAmount = leaseData.rentAmount;
+            lease.status = leaseData.status || 'active';
+            if (leaseData.digitalSignature) {
+                lease.digitalSignature = leaseData.digitalSignature;
+            }
+        }
+        else {
+            if (leaseData.digitalSignature !== undefined) {
+                lease.digitalSignature = leaseData.digitalSignature;
+            }
+            if (leaseData.status !== undefined) {
+                lease.status = leaseData.status;
+            }
+            if (leaseData.startDate) {
+                lease.startDate = new Date(leaseData.startDate);
+            }
+            if (leaseData.endDate) {
+                lease.endDate = new Date(leaseData.endDate);
+            }
+            if (leaseData.rentAmount !== undefined) {
+                lease.rentAmount = leaseData.rentAmount;
+            }
+        }
+        await this.leaseRepository.save(lease);
+        return lease;
+    }
     async findAllLeases() {
         return this.leaseRepository.find({ relations: ['tenant', 'user', 'property', 'unit'] });
     }
+    async updateLease(id, updateData) {
+        const lease = await this.leaseRepository.findOneBy({ id });
+        if (!lease) {
+            throw new common_1.NotFoundException(`Lease with id ${id} not found`);
+        }
+        const { id: _, ...fieldsToUpdate } = updateData;
+        Object.assign(lease, fieldsToUpdate);
+        return this.leaseRepository.save(lease);
+    }
+    async findByPropertyAndUnit(propertyId, unitId) {
+        return this.leaseRepository.findOne({
+            where: {
+                propertyId,
+                unitId,
+            },
+            relations: ['tenant', 'property', 'unit'],
+        });
+    }
     async findLeaseById(id) {
-        const lease = await this.leaseRepository.findOne({ where: { id }, relations: ['tenant', 'user', 'property', 'unit'] });
+        const lease = await this.leaseRepository.findOne({
+            where: { id },
+            relations: ['tenant', 'user', 'property', 'unit'],
+        });
         if (!lease)
             throw new common_1.NotFoundException(`Lease with ID ${id} not found`);
-        return lease;
-    }
-    async updateLease(id, updateData) {
-        const lease = await this.findLeaseById(id);
-        if (updateData.startDate)
-            lease.startDate = new Date(updateData.startDate);
-        if (updateData.endDate)
-            lease.endDate = new Date(updateData.endDate);
-        if (updateData.rentAmount !== undefined)
-            lease.rentAmount = updateData.rentAmount;
-        await this.leaseRepository.save(lease);
         return lease;
     }
     async deleteLease(id) {
@@ -58,11 +116,8 @@ let LeaseService = class LeaseService {
     }
     async findLeaseByPropertyAndUnit(propertyId, unitId) {
         const lease = await this.leaseRepository.findOne({
-            where: {
-                property: { id: propertyId },
-                unit: { id: unitId }
-            },
-            relations: ['property', 'unit', 'tenant'],
+            where: { propertyId, unitId },
+            relations: ['property', 'unit', 'tenant', 'user'],
         });
         if (!lease)
             throw new common_1.NotFoundException(`Lease not found for property ${propertyId} and unit ${unitId}`);
@@ -71,30 +126,14 @@ let LeaseService = class LeaseService {
     async findLeasesByOwner(ownerId) {
         return this.leaseRepository.find({
             where: { property: { owner: { id: ownerId } } },
-            relations: ['tenant', 'property', 'unit'],
+            relations: ['tenant', 'property', 'unit', 'user'],
         });
     }
     async findLeasesByTenant(tenantId) {
         return this.leaseRepository.find({
-            where: { tenant: { id: tenantId } },
-            relations: ['tenant', 'property', 'unit'],
+            where: { tenantId },
+            relations: ['tenant', 'property', 'unit', 'user'],
         });
-    }
-    async signLease(leaseData, user) {
-        let lease = await this.leaseRepository.findOne({
-            where: {
-                property: { id: leaseData.propertyId },
-                unit: { id: leaseData.unitId },
-                tenant: { id: user.id },
-            },
-        });
-        if (!lease) {
-            throw new common_1.NotFoundException('Lease not found for signing');
-        }
-        lease.paymentMethod = leaseData.paymentMethod;
-        lease.digitalSignature = leaseData.digitalSignature;
-        await this.leaseRepository.save(lease);
-        return lease;
     }
 };
 exports.LeaseService = LeaseService;

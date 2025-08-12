@@ -31,7 +31,7 @@ import { Role } from 'src/shared/enums/role.enum';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+//@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.OWNER, Role.ADMIN, Role.TENANT)
 @Controller('properties')
 export class PropertiesController {
@@ -45,7 +45,7 @@ export class PropertiesController {
     return this.service.getAvailablePropertiesForTenants();
   }
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  //@UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.OWNER, Role.ADMIN)
   @UseInterceptors(
     FilesInterceptor('images', 10, {
@@ -101,7 +101,7 @@ export class PropertiesController {
   }
 
   @Get('dashboard')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  //@UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.OWNER, Role.ADMIN)
   async getDashboardData(@Req() req: Request & { user: any }) {
     const ownerId = req.user.id;

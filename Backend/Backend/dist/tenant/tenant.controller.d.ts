@@ -35,4 +35,23 @@ export declare class TenantController {
     getMaintenanceRequests(req: any): Promise<MaintenanceRequest[]>;
     getAmenities(req: any): Promise<Amenity[]>;
     getLandlordInfo(req: any): Promise<Landlord>;
+    getRentalInfo(tenantId: string): Promise<{
+        property?: undefined;
+        unit?: undefined;
+        leaseStart?: undefined;
+        leaseEnd?: undefined;
+        monthlyRent?: undefined;
+        deposit?: undefined;
+        status?: undefined;
+    } | {
+        property: {
+            name: string | null;
+        };
+        unit: string | null;
+        leaseStart: Date;
+        leaseEnd: Date;
+        monthlyRent: number | null;
+        deposit: number | null;
+        status: import("../leases/lease.entity").LeaseStatus;
+    }>;
 }

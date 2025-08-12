@@ -74,7 +74,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => lease_entity_1.Lease, (lease) => lease.user),
+    (0, typeorm_1.OneToMany)(() => lease_entity_1.Lease, (lease) => lease.tenant),
     __metadata("design:type", Array)
 ], User.prototype, "leases", void 0);
 __decorate([

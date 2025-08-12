@@ -7,7 +7,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { AdminModule } from '../admin/admin.module'; 
 import { OwnerModule } from '../owner/owner.module'; 
-import { TenantModule } from '../tenant/tenant.module';  
+import { TenantModule } from '../tenant/tenant.module';
+import { MailModule } from './email/mail.module'; 
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { TenantModule } from '../tenant/tenant.module';
     JwtModule.register({}),
     forwardRef(() => AdminModule),   
     forwardRef(() => OwnerModule),   
-    forwardRef(() => TenantModule), 
+    forwardRef(() => TenantModule),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RolesGuard],

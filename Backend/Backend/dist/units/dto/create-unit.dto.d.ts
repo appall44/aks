@@ -5,6 +5,7 @@ export declare class CreateUnitDto {
     bedrooms: number;
     bathrooms: number;
     monthlyRent: number;
+    securityDeposit?: number;
     status: string;
     description?: string;
     images?: string[];
